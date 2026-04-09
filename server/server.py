@@ -50,7 +50,11 @@ ADMIN_KEY  = os.getenv("ADMIN_KEY",  "")
 
 SQUARE_TOKEN     = os.getenv("SQUARE_ACCESS_TOKEN", "")
 SQUARE_ENV       = os.getenv("SQUARE_ENVIRONMENT", "production")  # or "sandbox"
-GCAL_EMBED_URL   = os.getenv("GCAL_EMBED_URL", "")  # full Google Calendar embed URL
+GCAL_EMBED_URL   = os.getenv("GCAL_EMBED_URL", "")  # legacy iframe embed URL
+GCAL_CREDENTIALS = os.getenv("GCAL_CREDENTIALS_FILE",
+                              str(Path(__file__).parent / "gcal-credentials.json"))
+GCAL_CALENDAR_ID = os.getenv("GCAL_CALENDAR_ID",
+                              "c_085df00e428e9904bb761792ff53ec725497e27d33fc06bf38a8bac10c7eafe1@group.calendar.google.com")
 
 CATEGORIES = ["general", "receipts", "marketing", "production", "assets"]
 
@@ -524,6 +528,58 @@ async def square_summary(token: str = Query(...)):
         "currency":    currency,
         "as_of":       now.strftime("%H:%M"),
     }
+
+
+@app.get("/api/calendar/events")
+async def calendar_events(token: str = Query(...)):
+    """Fetch upcoming events from the team calendar via service account."""
+    _require_token(token)
+    creds_path = Path(GCAL_CREDENTIALS)
+    if not creds_path.exists():
+        raise HTTPException(503, "Calendar credentials not configured")
+
+    import asyncio
+    from google.oauth2 import service_account
+    import google.auth.transport.requests as g_requests
+
+    def _fetch():
+        creds = service_account.Credentials.from_service_account_file(
+            str(creds_path),
+            scopes=["https://www.googleapis.com/auth/calendar.readonly"],
+        )
+        creds.refresh(g_requests.Request())
+        return creds.token
+
+    token_val = await asyncio.get_event_loop().run_in_executor(None, _fetch)
+
+    now = datetime.now(timezone.utc).isoformat()
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(
+            f"https://www.googleapis.com/calendar/v3/calendars/{GCAL_CALENDAR_ID}/events",
+            params={
+                "timeMin": now,
+                "maxResults": 15,
+                "singleEvents": "true",
+                "orderBy": "startTime",
+            },
+            headers={"Authorization": f"Bearer {token_val}"},
+        )
+    if r.status_code != 200:
+        raise HTTPException(502, f"Calendar API error: {r.status_code}")
+
+    items = r.json().get("items", [])
+    events = []
+    for ev in items:
+        start = ev.get("start", {})
+        events.append({
+            "id":       ev.get("id"),
+            "summary":  ev.get("summary", "(no title)"),
+            "start":    start.get("dateTime") or start.get("date"),
+            "allDay":   "dateTime" not in start,
+            "location": ev.get("location", ""),
+            "url":      ev.get("htmlLink", ""),
+        })
+    return {"events": events}
 
 
 # ── Static / root ────────────────────────────────────────────────────────────

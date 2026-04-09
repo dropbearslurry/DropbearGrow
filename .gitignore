@@ -3,4 +3,5 @@ server/__pycache__/
 server/uploads/
 server/.env
 server/accounts.json
+server/gcal-credentials.json
 *.pyc

@@ -468,24 +468,32 @@ body::after {
 }
 
 /* Google Calendar tile */
-.gcal-tile { flex: 1; min-width: 400px; min-height: 480px; }
-.gcal-body { flex: 1; display: flex; }
-.gcal-body iframe {
-  flex: 1; border: none; min-height: 420px;
-  filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.9);
+.gcal-tile { flex: 1; min-width: 320px; }
+.gcal-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.gcal-body::-webkit-scrollbar { width: 4px; }
+.gcal-body::-webkit-scrollbar-thumb { background: var(--border2); }
+.cal-event {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 0 12px; padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s; cursor: default;
 }
-.gcal-unconfigured {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 12px; padding: 40px;
+.cal-event:hover { background: var(--bg3); }
+.cal-date {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 1px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 4px 0; flex-shrink: 0;
 }
-.gcal-unconfigured p {
+.cal-date-mon { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal); }
+.cal-date-day { font-family: var(--display); font-size: 20px; color: var(--teal-lt); line-height: 1; }
+.cal-info { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
+.cal-summary { font-family: var(--body); font-size: 13px; color: var(--text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-meta { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+.cal-empty {
+  flex: 1; display: flex; align-items: center; justify-content: center;
   font-family: var(--mono); font-size: 11px; color: var(--text-dim);
-  text-align: center; line-height: 1.8; max-width: 340px;
-}
-.gcal-unconfigured code {
-  background: var(--bg3); border: 1px solid var(--border2);
-  padding: 2px 6px; border-radius: var(--radius); font-size: 11px;
-  color: var(--teal-lt);
 }
 
 /* ── Scratch Panel ──────────────────────────────────────────────────── */
@@ -694,7 +702,7 @@ body::after {
               <span class="dash-tile-meta" id="gcal-meta">dropbear slurry</span>
             </div>
             <div class="gcal-body" id="gcal-body">
-              <iframe src="https://calendar.google.com/calendar/embed?src=c_085df00e428e9904bb761792ff53ec725497e27d33fc06bf38a8bac10c7eafe1%40group.calendar.google.com&ctz=Australia%2FSydney&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0" frameborder="0" scrolling="no" title="Team Calendar"></iframe>
+              <div class="cal-empty">loading…</div>
             </div>
           </div>
 
@@ -1200,11 +1208,10 @@ async function loadDashboard() {
     if (cfg.square) loadSquare(base);
     else renderSquareUnconfigured('Add SQUARE_ACCESS_TOKEN to the server .env to enable');
 
-    if (cfg.gcal_url) renderGcal(cfg.gcal_url);
-    else renderGcalUnconfigured('Add <code>GCAL_EMBED_URL</code> to the server .env to enable');
+    loadCalendar(base);
   } catch (e) {
     renderSquareUnconfigured('Could not reach server');
-    renderGcalUnconfigured('Could not reach server');
+    document.getElementById('gcal-body').innerHTML = '<div class="cal-empty">could not reach server</div>';
   }
 }
 
@@ -1240,18 +1247,35 @@ function renderSquareUnconfigured(msg) {
   document.getElementById('square-body').textContent = msg;
 }
 
-function renderGcal(embedUrl) {
-  document.getElementById('gcal-meta').textContent = 'team calendar';
-  document.getElementById('gcal-body').innerHTML =
-    `<iframe src="${embedUrl}" frameborder="0" scrolling="no" title="Team Calendar"></iframe>`;
-}
-
-function renderGcalUnconfigured(msg) {
-  document.getElementById('gcal-body').innerHTML =
-    `<div class="gcal-unconfigured">
-      <div style="font-size:32px;opacity:0.15;">◈</div>
-      <p>${msg}</p>
-    </div>`;
+async function loadCalendar(base) {
+  const body = document.getElementById('gcal-body');
+  body.innerHTML = '<div class="cal-empty">loading…</div>';
+  try {
+    const res = await fetch(`${base}/api/calendar/events?token=${encodeURIComponent(sessionToken)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { events } = await res.json();
+    if (!events.length) {
+      body.innerHTML = '<div class="cal-empty">no upcoming events</div>';
+      return;
+    }
+    document.getElementById('gcal-meta').textContent = `${events.length} upcoming`;
+    body.innerHTML = events.map(ev => {
+      const d    = new Date(ev.start);
+      const mon  = d.toLocaleString('en-AU', { month: 'short' }).toUpperCase();
+      const day  = d.getDate();
+      const time = ev.allDay ? 'all day' : d.toLocaleString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+      const loc  = ev.location ? `· ${ev.location}` : '';
+      return `<div class="cal-event">
+        <div class="cal-date"><div class="cal-date-mon">${mon}</div><div class="cal-date-day">${day}</div></div>
+        <div class="cal-info">
+          <div class="cal-summary">${ev.summary}</div>
+          <div class="cal-meta">${time} ${loc}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    body.innerHTML = `<div class="cal-empty">calendar error: ${e.message}</div>`;
+  }
 }
 
 // Load dashboard when tab is opened, and on first load
