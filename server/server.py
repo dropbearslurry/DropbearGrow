@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from pathlib import Path
 
+import httpx
 from fastapi import (
     FastAPI, WebSocket, WebSocketDisconnect,
     UploadFile, File, HTTPException, Form, Query, Header
@@ -46,6 +47,10 @@ SMTP_USER  = os.getenv("SMTP_USER",  "admin@dropbearslurry.com.au")
 SMTP_PASS  = os.getenv("SMTP_PASS",  "")
 SMTP_FROM  = os.getenv("SMTP_FROM",  "internal@dropbearslurry.com.au")
 ADMIN_KEY  = os.getenv("ADMIN_KEY",  "")
+
+SQUARE_TOKEN     = os.getenv("SQUARE_ACCESS_TOKEN", "")
+SQUARE_ENV       = os.getenv("SQUARE_ENVIRONMENT", "production")  # or "sandbox"
+GCAL_EMBED_URL   = os.getenv("GCAL_EMBED_URL", "")  # full Google Calendar embed URL
 
 CATEGORIES = ["general", "receipts", "marketing", "production", "assets"]
 
@@ -452,6 +457,73 @@ async def delete_file(category: str, filename: str, token: str = Query(...)):
         raise HTTPException(404, "File not found")
     path.unlink()
     return {"deleted": path.name, "category": category}
+
+
+# ── Integrations ─────────────────────────────────────────────────────────────
+
+@app.get("/api/integrations/config")
+async def integrations_config(token: str = Query(...)):
+    """Tell the client which integrations are configured."""
+    _require_token(token)
+    return {
+        "square":   bool(SQUARE_TOKEN),
+        "gcal_url": GCAL_EMBED_URL or None,
+    }
+
+
+@app.get("/api/integrations/square")
+async def square_summary(token: str = Query(...)):
+    """Proxy today's Square sales summary — keeps the access token server-side."""
+    _require_token(token)
+    if not SQUARE_TOKEN:
+        raise HTTPException(503, "Square not configured")
+
+    base_url = (
+        "https://connect.squareupsandbox.com"
+        if SQUARE_ENV == "sandbox"
+        else "https://connect.squareup.com"
+    )
+
+    now   = datetime.now(timezone.utc)
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+    headers = {
+        "Authorization": f"Bearer {SQUARE_TOKEN}",
+        "Square-Version": "2024-04-17",
+        "Content-Type":  "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        # Fetch today's completed payments
+        resp = await client.get(
+            f"{base_url}/v2/payments",
+            headers=headers,
+            params={
+                "begin_time": start,
+                "sort_order": "DESC",
+                "limit":      200,
+            },
+        )
+
+    if resp.status_code != 200:
+        raise HTTPException(502, f"Square API error: {resp.status_code}")
+
+    payments = resp.json().get("payments", [])
+    completed = [p for p in payments if p.get("status") == "COMPLETED"]
+
+    total_cents = sum(
+        p.get("total_money", {}).get("amount", 0) for p in completed
+    )
+    currency = (completed[0].get("total_money", {}).get("currency", "AUD")
+                if completed else "AUD")
+
+    return {
+        "date":        now.strftime("%d %b %Y"),
+        "order_count": len(completed),
+        "total":       total_cents / 100,
+        "currency":    currency,
+        "as_of":       now.strftime("%H:%M"),
+    }
 
 
 # ── Static / root ────────────────────────────────────────────────────────────

@@ -339,6 +339,81 @@ body::after {
 .repo-stat { font-family:var(--mono); font-size:10px; color:var(--text-dim); }
 .repo-stat b { color:var(--teal-lt); font-weight:normal; }
 
+/* ── Dashboard Panel ────────────────────────────────────────────────── */
+.dashboard-layout {
+  flex: 1; overflow-y: auto; padding: 32px;
+  display: flex; flex-direction: column; gap: 24px; background: var(--bg);
+}
+.dashboard-layout::-webkit-scrollbar { width: 4px; }
+.dashboard-layout::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.dashboard-row { display: flex; gap: 24px; flex-wrap: wrap; }
+
+.dash-tile {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  display: flex; flex-direction: column; position: relative;
+}
+.dash-tile::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+}
+
+.dash-tile-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+}
+.dash-tile-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--teal);
+}
+.dash-tile-meta {
+  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+}
+
+/* Square tile */
+.square-tile { flex: 0 0 320px; }
+.square-body { padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; }
+.square-stat { display: flex; flex-direction: column; gap: 4px; }
+.square-stat-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.square-stat-value {
+  font-family: var(--display); font-size: 36px; color: var(--teal-lt);
+  letter-spacing: 0.02em; line-height: 1;
+}
+.square-stat-sub {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+}
+.square-stats-row { display: flex; gap: 32px; }
+.square-loading, .square-error, .square-unconfigured {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  padding: 28px 24px;
+}
+.square-error { color: var(--red); }
+
+/* Google Calendar tile */
+.gcal-tile { flex: 1; min-width: 400px; min-height: 480px; }
+.gcal-body { flex: 1; display: flex; }
+.gcal-body iframe {
+  flex: 1; border: none; min-height: 420px;
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.9);
+}
+.gcal-unconfigured {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; padding: 40px;
+}
+.gcal-unconfigured p {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  text-align: center; line-height: 1.8; max-width: 340px;
+}
+.gcal-unconfigured code {
+  background: var(--bg3); border: 1px solid var(--border2);
+  padding: 2px 6px; border-radius: var(--radius); font-size: 11px;
+  color: var(--teal-lt);
+}
+
 /* ── Scratch Panel ──────────────────────────────────────────────────── */
 .scratch-layout {
   display: flex; flex: 1; overflow: hidden;
@@ -445,7 +520,8 @@ body::after {
     <div class="topbar-logo">Dropbear Slurry</div>
     <div class="topbar-divider"></div>
     <div class="topbar-tabs">
-      <button class="tab-btn active" data-panel="chat">⬡ COMMS</button>
+      <button class="tab-btn active" data-panel="dashboard">⬡ DASHBOARD</button>
+      <button class="tab-btn" data-panel="chat">⬡ COMMS</button>
       <button class="tab-btn" data-panel="repo">⬡ FILES</button>
       <a class="tab-btn" href="handbook.html">⬡ HANDBOOK</a>
       <button class="tab-btn" data-panel="plans">⬡ PLANS</button>
@@ -461,8 +537,40 @@ body::after {
 
   <div class="main">
 
+    <!-- Dashboard Panel -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="dashboard-layout">
+        <div class="dashboard-row">
+
+          <!-- Square tile -->
+          <div class="dash-tile square-tile">
+            <div class="dash-tile-header">
+              <span class="dash-tile-title">⬡ square — today</span>
+              <span class="dash-tile-meta" id="square-as-of"></span>
+            </div>
+            <div id="square-body" class="square-loading">loading…</div>
+          </div>
+
+          <!-- Google Calendar tile -->
+          <div class="dash-tile gcal-tile">
+            <div class="dash-tile-header">
+              <span class="dash-tile-title">⬡ team calendar</span>
+              <span class="dash-tile-meta" id="gcal-meta"></span>
+            </div>
+            <div class="gcal-body" id="gcal-body">
+              <div class="gcal-unconfigured">
+                <div style="font-size:32px;opacity:0.15;">◈</div>
+                <p>loading…</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <!-- Chat Panel -->
-    <div class="panel active" id="panel-chat">
+    <div class="panel" id="panel-chat">
       <div class="chat-layout">
         <div class="chat-sidebar">
           <div class="sidebar-section">
@@ -735,6 +843,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
     if (btn.dataset.panel === 'repo') loadFiles();
+    if (btn.dataset.panel === 'dashboard') loadDashboard();
   });
 });
 
@@ -916,6 +1025,79 @@ function renderFiles(files) {
   document.getElementById('stat-count').textContent = files.length;
   document.getElementById('stat-size').textContent  = humanSize(totalSize);
 }
+
+// ── Dashboard ─────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const base = apiBase();
+  if (!base) {
+    renderSquareUnconfigured('Connect to a server first');
+    renderGcalUnconfigured('Connect to a server first');
+    return;
+  }
+
+  try {
+    const res  = await fetch(`${base}/api/integrations/config?token=${encodeURIComponent(sessionToken)}`);
+    const cfg  = await res.json();
+
+    if (cfg.square) loadSquare(base);
+    else renderSquareUnconfigured('Add SQUARE_ACCESS_TOKEN to the server .env to enable');
+
+    if (cfg.gcal_url) renderGcal(cfg.gcal_url);
+    else renderGcalUnconfigured('Add <code>GCAL_EMBED_URL</code> to the server .env to enable');
+  } catch (e) {
+    renderSquareUnconfigured('Could not reach server');
+    renderGcalUnconfigured('Could not reach server');
+  }
+}
+
+async function loadSquare(base) {
+  document.getElementById('square-body').className = 'square-loading';
+  document.getElementById('square-body').textContent = 'loading…';
+  try {
+    const res  = await fetch(`${base}/api/integrations/square?token=${encodeURIComponent(sessionToken)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    document.getElementById('square-as-of').textContent = `as of ${data.as_of}`;
+    document.getElementById('square-body').className = 'square-body';
+    document.getElementById('square-body').innerHTML = `
+      <div class="square-stat">
+        <div class="square-stat-label">revenue</div>
+        <div class="square-stat-value">${data.currency === 'AUD' ? '$' : ''}${data.total.toFixed(2)}</div>
+        <div class="square-stat-sub">${data.currency} · ${data.date}</div>
+      </div>
+      <div class="square-stat">
+        <div class="square-stat-label">transactions</div>
+        <div class="square-stat-value" style="font-size:28px">${data.order_count}</div>
+        <div class="square-stat-sub">completed today</div>
+      </div>`;
+  } catch (e) {
+    document.getElementById('square-body').className = 'square-error';
+    document.getElementById('square-body').textContent = `Square error: ${e.message}`;
+  }
+}
+
+function renderSquareUnconfigured(msg) {
+  document.getElementById('square-body').className = 'square-unconfigured';
+  document.getElementById('square-body').textContent = msg;
+}
+
+function renderGcal(embedUrl) {
+  document.getElementById('gcal-meta').textContent = 'team calendar';
+  document.getElementById('gcal-body').innerHTML =
+    `<iframe src="${embedUrl}" frameborder="0" scrolling="no" title="Team Calendar"></iframe>`;
+}
+
+function renderGcalUnconfigured(msg) {
+  document.getElementById('gcal-body').innerHTML =
+    `<div class="gcal-unconfigured">
+      <div style="font-size:32px;opacity:0.15;">◈</div>
+      <p>${msg}</p>
+    </div>`;
+}
+
+// Load dashboard when tab is opened, and on first load
+loadDashboard();
 
 // ── Scratch pad ───────────────────────────────────────────────────────
 const SCRATCH_KEY = 'db_scratch_pad';
