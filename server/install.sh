@@ -12,6 +12,9 @@ SERVICE_USER="dropbear"
 SERVICE_NAME="dropbear"
 PORT=7331
 
+# Pin cloudflared to a known release — update intentionally after reviewing the changelog
+CLOUDFLARED_VERSION="2025.4.0"
+
 # ── Colours ───────────────────────────────────────────────────────────────────
 GRN='\033[0;32m'; CYN='\033[0;36m'; YLW='\033[1;33m'; RED='\033[0;31m'; RST='\033[0m'
 step()  { echo -e "\n${CYN}▸ $*${RST}"; }
@@ -64,14 +67,28 @@ apt-get install -y -qq \
 ok "Dependencies installed"
 
 # ── Cloudflared ───────────────────────────────────────────────────────────────
-step "Installing cloudflared"
+step "Installing cloudflared ${CLOUDFLARED_VERSION}"
 if ! command -v cloudflared &>/dev/null; then
     ARCH=$(dpkg --print-architecture)
-    curl -fsSL "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${ARCH}.deb" \
-        -o /tmp/cloudflared.deb
-    dpkg -i /tmp/cloudflared.deb
-    rm /tmp/cloudflared.deb
-    ok "cloudflared installed"
+    CF_BASE="https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}"
+    CF_DEB="cloudflared-linux-${ARCH}.deb"
+
+    curl -fsSL "${CF_BASE}/${CF_DEB}"              -o "/tmp/${CF_DEB}"
+    curl -fsSL "${CF_BASE}/cloudflared-checksums.txt" -o /tmp/cloudflared-checksums.txt
+
+    # Verify the .deb against the published checksum
+    EXPECTED=$(grep " ${CF_DEB}$" /tmp/cloudflared-checksums.txt | awk '{print $1}')
+    if [[ -z "$EXPECTED" ]]; then
+        fatal "Checksum entry for ${CF_DEB} not found in release checksums — aborting"
+    fi
+    ACTUAL=$(sha256sum "/tmp/${CF_DEB}" | awk '{print $1}')
+    if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+        fatal "Checksum mismatch for ${CF_DEB}\n  expected: ${EXPECTED}\n  got:      ${ACTUAL}"
+    fi
+
+    dpkg -i "/tmp/${CF_DEB}"
+    rm "/tmp/${CF_DEB}" /tmp/cloudflared-checksums.txt
+    ok "cloudflared ${CLOUDFLARED_VERSION} installed and verified"
 else
     ok "cloudflared already installed ($(cloudflared --version))"
 fi
