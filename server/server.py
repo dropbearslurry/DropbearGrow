@@ -674,6 +674,103 @@ async def calendar_events(token: str = Query(...)):
     return {"events": events}
 
 
+GCAL_SA_SCOPES = [
+    "https://www.googleapis.com/auth/calendar.readonly",
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/drive.readonly",
+]
+
+def _sa_token(subject: str, scope: str) -> str:
+    """Get a short-lived access token for a service account impersonating subject."""
+    from google.oauth2 import service_account as _sa
+    import google.auth.transport.requests as _greq
+    creds = _sa.Credentials.from_service_account_file(
+        str(Path(GCAL_CREDENTIALS)), scopes=[scope]
+    ).with_subject(subject)
+    creds.refresh(_greq.Request())
+    return creds.token
+
+
+@app.get("/api/gmail/inbox")
+async def gmail_inbox(token: str = Query(...), account: str = Query(...)):
+    """Return recent unread messages for a dropbearslurry.com.au account."""
+    _require_token(token)
+    allowed = {f"{u}@{ALLOWED_DOMAIN}" for u in ("admin", "jon", "jed", "elle")}
+    if account not in allowed:
+        raise HTTPException(400, "Invalid account")
+    if not Path(GCAL_CREDENTIALS).exists():
+        raise HTTPException(503, "Google credentials not configured")
+
+    import asyncio
+    sa_tok = await asyncio.get_event_loop().run_in_executor(
+        None, _sa_token, account, "https://www.googleapis.com/auth/gmail.readonly"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        # Fetch unread message IDs
+        r = await client.get(
+            f"https://gmail.googleapis.com/gmail/v1/users/me/messages",
+            params={"q": "is:unread", "maxResults": 10},
+            headers={"Authorization": f"Bearer {sa_tok}"},
+        )
+        if r.status_code != 200:
+            raise HTTPException(502, f"Gmail API error: {r.status_code}")
+
+        ids = [m["id"] for m in r.json().get("messages", [])]
+        if not ids:
+            return {"account": account, "messages": []}
+
+        # Fetch metadata for each message in parallel
+        async def fetch_meta(mid):
+            resp = await client.get(
+                f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{mid}",
+                params={"format": "metadata", "metadataHeaders": ["From", "Subject", "Date"]},
+                headers={"Authorization": f"Bearer {sa_tok}"},
+            )
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            headers = {h["name"]: h["value"] for h in data.get("payload", {}).get("headers", [])}
+            return {
+                "id":      mid,
+                "from":    headers.get("From", ""),
+                "subject": headers.get("Subject", "(no subject)"),
+                "date":    headers.get("Date", ""),
+            }
+
+        messages = [m for m in await asyncio.gather(*[fetch_meta(i) for i in ids]) if m]
+    return {"account": account, "messages": messages}
+
+
+@app.get("/api/drive/files")
+async def drive_files(token: str = Query(...)):
+    """List files in the dropbear-staff Drive folder."""
+    _require_token(token)
+    if not Path(GCAL_CREDENTIALS).exists():
+        raise HTTPException(503, "Google credentials not configured")
+
+    import asyncio
+    sa_tok = await asyncio.get_event_loop().run_in_executor(
+        None, _sa_token, f"admin@{ALLOWED_DOMAIN}",
+        "https://www.googleapis.com/auth/drive.readonly"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(
+            "https://www.googleapis.com/drive/v3/files",
+            params={
+                "pageSize": 50,
+                "fields": "files(id,name,mimeType,modifiedTime,size,webViewLink)",
+                "orderBy": "modifiedTime desc",
+            },
+            headers={"Authorization": f"Bearer {sa_tok}"},
+        )
+    if r.status_code != 200:
+        raise HTTPException(502, f"Drive API error: {r.status_code}")
+
+    return {"files": r.json().get("files", [])}
+
+
 # ── Static / root ────────────────────────────────────────────────────────────
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
