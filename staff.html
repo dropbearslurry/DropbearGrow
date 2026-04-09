@@ -398,27 +398,39 @@ body::after {
 }
 .dash-quicklink:hover .dash-quicklink-label { color: var(--text); }
 
-/* Square tile */
-.square-tile { flex: 0 0 320px; }
-.square-body { padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; }
-.square-stat { display: flex; flex-direction: column; gap: 4px; }
-.square-stat-label {
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em;
-  text-transform: uppercase; color: var(--text-dim);
+/* Inventory tile */
+.inv-tile { flex: 0 0 480px; }
+.inv-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--mono); font-size: 12px;
 }
-.square-stat-value {
-  font-family: var(--display); font-size: 36px; color: var(--teal-lt);
-  letter-spacing: 0.02em; line-height: 1;
+.inv-table thead tr {
+  background: var(--bg3); border-bottom: 1px solid var(--border);
 }
-.square-stat-sub {
-  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+.inv-table th {
+  padding: 8px 16px; text-align: left;
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-dim); font-weight: normal;
 }
-.square-stats-row { display: flex; gap: 32px; }
-.square-loading, .square-error, .square-unconfigured {
-  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
-  padding: 28px 24px;
+.inv-table td {
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
-.square-error { color: var(--red); }
+.inv-table tr:last-child td { border-bottom: none; }
+.inv-table tr:hover td { background: var(--bg3); }
+.inv-qty {
+  display: inline-block; min-width: 32px; text-align: center;
+  padding: 2px 8px; border-radius: var(--radius);
+  font-size: 12px; font-weight: 500;
+}
+.inv-qty.ok  { color: var(--green); background: var(--green-dim); }
+.inv-qty.out { color: var(--text-dim); background: var(--bg3); border: 1px solid var(--border); }
+.inv-badge {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim); border: 1px solid var(--border2);
+  padding: 1px 5px; border-radius: var(--radius); margin-left: 6px;
+  vertical-align: middle;
+}
 
 /* Google Calendar tile */
 .gcal-tile { flex: 1; min-width: 400px; min-height: 480px; }
@@ -590,13 +602,54 @@ body::after {
 
         <div class="dashboard-row">
 
-          <!-- Square tile -->
-          <div class="dash-tile square-tile">
+          <!-- Inventory tile -->
+          <div class="dash-tile inv-tile">
             <div class="dash-tile-header">
-              <span class="dash-tile-title">⬡ square — today</span>
-              <span class="dash-tile-meta" id="square-as-of"></span>
+              <span class="dash-tile-title">⬡ stock levels</span>
+              <span class="dash-tile-meta">North Booval · as of 9 Apr 2026</span>
             </div>
-            <div id="square-body" class="square-loading">loading…</div>
+            <table class="inv-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>K-666 Plant Tonic 1L</td>
+                  <td>DSLF-01-666</td>
+                  <td>$40.00</td>
+                  <td><span class="inv-qty ok">45</span></td>
+                </tr>
+                <tr>
+                  <td>K-666 Plant Tonic 5L</td>
+                  <td>DSLF-05-666</td>
+                  <td>$170.00</td>
+                  <td><span class="inv-qty ok">30</span></td>
+                </tr>
+                <tr>
+                  <td>K-333 Plant Tonic 1L</td>
+                  <td>DSLF-01-333</td>
+                  <td>$40.00</td>
+                  <td><span class="inv-qty ok">26</span></td>
+                </tr>
+                <tr>
+                  <td>Premium Soil</td>
+                  <td>DSLF-SOIL-001</td>
+                  <td>—</td>
+                  <td><span class="inv-qty out">0</span></td>
+                </tr>
+                <tr>
+                  <td>Coffee Mug <span class="inv-badge">hidden</span></td>
+                  <td>MUG-001</td>
+                  <td>$13.99</td>
+                  <td><span class="inv-qty out">0</span></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- Google Calendar tile -->
