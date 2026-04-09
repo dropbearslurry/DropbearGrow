@@ -417,12 +417,12 @@ async def delete_file(category: str, filename: str, token: str = Query(...)):
 
 
 # ── Static / root ────────────────────────────────────────────────────────────
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-
-@app.get("/")
-async def root():
-    return FileResponse(STATIC_DIR / "index.html")
+    @app.get("/")
+    async def root():
+        return FileResponse(STATIC_DIR / "index.html")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
