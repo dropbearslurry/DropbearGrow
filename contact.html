@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us — Dropbear Slurry</title>
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --teal:    #3C6267;
+  --teal-dk: #2A464A;
+  --teal-lt: #D4E8EA;
+  --cream:   #F5F0E8;
+  --offwhite:#FAFAF5;
+  --soil:    #1C1208;
+  --ash:     #6B7B7D;
+  --alert:   #C45A2A;
+  --green:   #7A9B2E;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--cream); font-family: 'IBM Plex Sans', sans-serif; color: var(--soil); }
+
+/* ── TEST BANNER ── */
+.test-banner {
+  background: var(--alert); color: #fff; text-align: center; padding: 7px 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--teal-dk); padding: 0 24px;
+  display: flex; align-items: center; height: 56px; gap: 32px;
+}
+.nav-brand { font-family: 'Shrikhand', serif; font-size: 1.15rem; color: #fff; letter-spacing: 0.02em; white-space: nowrap; flex-shrink: 0; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.nav-logo-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.2); flex-shrink: 0; }
+.nav-links { display: flex; gap: 24px; list-style: none; flex: 1; }
+.nav-links a {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.72); text-decoration: none;
+  transition: color 0.15s; white-space: nowrap;
+}
+.nav-links a:hover, .nav-links a.active { color: #fff; }
+.nav-toggle {
+  display: none; background: none; border: none;
+  color: rgba(255,255,255,0.85); font-size: 1.3rem;
+  cursor: pointer; padding: 4px 0 4px 8px;
+  margin-left: auto; line-height: 1; flex-shrink: 0;
+}
+@media (max-width: 700px) {
+  .nav { height: auto; padding: 12px 20px; flex-wrap: wrap; gap: 0; }
+  .nav-brand { flex: 1; }
+  .nav-toggle { display: flex; align-items: center; }
+  .nav-links { display: none; width: 100%; flex-direction: column; gap: 0; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; padding-bottom: 6px; }
+  .nav-links li { padding: 8px 0; }
+  .nav-links a { font-size: 0.75rem; }
+  .nav.nav-open .nav-links { display: flex; }
+}
+
+/* ── PAGE HERO ── */
+.page-hero {
+  background: var(--teal); padding: 56px 24px 64px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.page-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 60% 40%, rgba(255,255,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-eyebrow {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--teal-lt); margin-bottom: 12px;
+}
+.page-hero h1 {
+  font-family: 'Shrikhand', serif; font-size: clamp(2rem, 5vw, 3.2rem);
+  color: #fff; line-height: 1.1; letter-spacing: 0.01em;
+  margin-bottom: 14px;
+}
+.page-hero p {
+  font-size: 0.9rem; color: rgba(255,255,255,0.65);
+  max-width: 400px; margin: 0 auto; line-height: 1.6;
+}
+
+/* ── CONTENT LAYOUT ── */
+.content { max-width: 800px; margin: 0 auto; padding: 64px 24px; display: grid; grid-template-columns: 1fr 1.6fr; gap: 48px; align-items: start; }
+@media (max-width: 640px) { .content { grid-template-columns: 1fr; gap: 40px; } }
+
+/* ── SIDEBAR INFO ── */
+.contact-info { }
+.section-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-bottom: 10px;
+}
+.contact-info h2 {
+  font-family: 'Shrikhand', serif; font-size: 1.6rem;
+  color: var(--soil); margin-bottom: 20px; line-height: 1.15;
+}
+.contact-info p {
+  font-size: 0.88rem; color: var(--ash); line-height: 1.65; margin-bottom: 28px;
+}
+.info-items { display: flex; flex-direction: column; gap: 16px; }
+.info-item { display: flex; align-items: flex-start; gap: 12px; }
+.info-icon {
+  width: 32px; height: 32px; border-radius: 6px;
+  background: var(--teal-lt); color: var(--teal-dk);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 0.9rem;
+}
+.info-item-body { }
+.info-item-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ash); margin-bottom: 2px;
+}
+.info-item-value { font-size: 0.85rem; color: var(--soil); font-weight: 500; }
+
+/* ── FORM ── */
+.contact-form-wrap { }
+.form-card {
+  background: var(--offwhite); border: 1px solid rgba(60,98,103,0.14);
+  border-radius: 8px; padding: 32px;
+}
+.form-card h3 {
+  font-family: 'Shrikhand', serif; font-size: 1.3rem;
+  color: var(--soil); margin-bottom: 24px;
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ash); margin-bottom: 6px;
+}
+.form-group label .opt {
+  color: rgba(107,123,125,0.5); font-size: 0.55rem; margin-left: 4px;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%; padding: 10px 12px;
+  background: var(--cream); border: 1px solid rgba(60,98,103,0.2);
+  border-radius: 6px; font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.88rem; color: var(--soil); outline: none;
+  transition: border-color 0.15s;
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus { border-color: var(--teal); }
+.form-group textarea { resize: vertical; min-height: 110px; line-height: 1.5; }
+.btn-submit {
+  width: 100%; background: var(--teal); color: #fff;
+  border: none; border-radius: 8px; padding: 13px 20px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s; margin-top: 4px;
+}
+.btn-submit:hover { background: var(--teal-dk); }
+
+/* ── FOOTER ── */
+footer { background: var(--soil); padding: 32px 24px; text-align: center; }
+.footer-brand { font-family: 'Shrikhand', serif; font-size: 1.2rem; color: rgba(255,255,255,0.5); margin-bottom: 12px; }
+.footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; list-style: none; margin-bottom: 20px; }
+.footer-links a { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.15s; }
+.footer-links a:hover { color: rgba(255,255,255,0.7); }
+.footer-copy { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; letter-spacing: 0.08em; color: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<div class="test-banner">⚠ Test Environment — dropbearslurry-del.github.io</div>
+
+<nav class="nav">
+  <a href="index.html" class="nav-brand">
+    <img src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="Dropbear Slurry" class="nav-logo-img" width="32" height="32">
+    Dropbear Slurry
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html#products">Buy Liquid Fertiliser</a></li>
+    <li><a href="about.html">About Us</a></li>
+    <li><a href="msds.html">MSDS</a></li>
+    <li><a href="index.html#soil" style="opacity:0.4">Living Soil — Coming Soon</a></li>
+    <li><a href="contact.html" class="active">Contact</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+</nav>
+
+<div class="page-hero">
+  <p class="page-eyebrow">Get in Touch</p>
+  <h1>Contact Us</h1>
+  <p>Questions, bulk orders, or just want to talk plants — we'd love to hear from you.</p>
+</div>
+
+<main class="content">
+
+  <div class="contact-info">
+    <p class="section-label">Details</p>
+    <h2>Say hello</h2>
+    <p>Based in Ipswich, Queensland. We're a small team and we read every message.</p>
+
+    <div class="info-items">
+      <div class="info-item">
+        <div class="info-icon">📍</div>
+        <div class="info-item-body">
+          <p class="info-item-label">Location</p>
+          <p class="info-item-value">Ipswich, Queensland, Australia</p>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">📦</div>
+        <div class="info-item-body">
+          <p class="info-item-label">Bulk Orders</p>
+          <p class="info-item-value">10L+ available on request</p>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">🌿</div>
+        <div class="info-item-body">
+          <p class="info-item-label">MSDS / Safety</p>
+          <p class="info-item-value"><a href="msds.html" style="color:var(--teal); text-decoration:none;">Download from MSDS page →</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-form-wrap">
+    <div class="form-card">
+      <h3>Send a message</h3>
+      <form>
+        <div class="form-group">
+          <label for="name">Full name <span class="opt">(optional)</span></label>
+          <input type="text" id="name" name="name" placeholder="Jane Smith" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" name="email" placeholder="jane@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="subject">Subject <span class="opt">(optional)</span></label>
+          <select id="subject" name="subject">
+            <option value="">Select a topic…</option>
+            <option value="order">Order enquiry</option>
+            <option value="bulk">Bulk / wholesale</option>
+            <option value="msds">Safety / MSDS</option>
+            <option value="product">Product question</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="message">Message <span class="opt">(optional)</span></label>
+          <textarea id="message" name="message" placeholder="Tell us what you need…"></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Send Message</button>
+      </form>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="footer-brand">Dropbear Slurry</div>
+  <ul class="footer-links">
+    <li><a href="index.html#products">Shop</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="msds.html">MSDS</a></li>
+    <li><a href="contact.html">Contact</a></li>
+    <li><a href="#">Privacy Policy</a></li>
+  </ul>
+  <p class="footer-copy">© 2026 Dropbear Slurry Pty Ltd. · Made in Queensland, Australia</p>
+</footer>
+
+<script>
+(function () {
+  var navToggle = document.querySelector('.nav-toggle');
+  var nav = document.querySelector('.nav');
+  if (navToggle) {
+    navToggle.addEventListener('click', function () {
+      var open = nav.classList.toggle('nav-open');
+      navToggle.setAttribute('aria-expanded', String(open));
+      navToggle.textContent = open ? '✕' : '☰';
+    });
+    document.querySelectorAll('.nav-links a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        nav.classList.remove('nav-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        navToggle.textContent = '☰';
+      });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dropbear Slurry — Plant Tonics &amp; Fertiliser</title>
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --teal:     #3C6267;
+  --teal-dk:  #2A464A;
+  --teal-lt:  #D4E8EA;
+  --cream:    #F5F0E8;
+  --offwhite: #FAFAF5;
+  --soil:     #1C1208;
+  --ash:      #6B7B7D;
+  --alert:    #C45A2A;
+  --green:    #7A9B2E;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--cream); font-family: 'IBM Plex Sans', sans-serif; color: var(--soil); }
+
+/* ── NAV ── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--teal-dk);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  gap: 32px;
+}
+.nav-brand {
+  font-family: 'Shrikhand', serif;
+  font-size: 1.15rem;
+  color: #fff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.nav-logo-img {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+  flex: 1;
+}
+.nav-links a {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.72);
+  text-decoration: none;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+.nav-links a:hover { color: #fff; }
+.nav-cart {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.72);
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.85);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 0 4px 8px;
+  margin-left: auto;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── MOBILE NAV ── */
+@media (max-width: 700px) {
+  .nav {
+    height: auto;
+    padding: 12px 20px;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .nav-brand { flex: 1; }
+  .nav-toggle { display: flex; align-items: center; }
+  .nav-cart { display: none; }
+  .nav-links {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 8px;
+    padding-bottom: 6px;
+  }
+  .nav-links li { padding: 8px 0; }
+  .nav-links a { font-size: 0.75rem; }
+  .nav.nav-open .nav-links { display: flex; }
+}
+
+/* ── HERO ── */
+.hero {
+  background: var(--teal);
+  padding: 64px 24px 72px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 60% 40%, rgba(255,255,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--teal-lt);
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-family: 'Shrikhand', serif;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  color: #fff;
+  line-height: 1.08;
+  margin-bottom: 18px;
+  letter-spacing: 0.01em;
+}
+.hero-sub {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.78);
+  max-width: 480px;
+  margin: 0 auto 32px;
+  line-height: 1.6;
+}
+.hero-cta {
+  display: inline-block;
+  background: #fff;
+  color: var(--teal-dk);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 14px 32px;
+  border-radius: 8px;
+  transition: background 0.15s, transform 0.15s;
+}
+.hero-cta:hover { background: var(--teal-lt); transform: translateY(-1px); }
+
+/* ── STRIP ── */
+.strip {
+  background: var(--soil);
+  padding: 12px 24px;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+
+/* ── SECTION ── */
+.section { padding: 64px 24px; max-width: 1040px; margin: 0 auto; }
+.section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 10px;
+}
+.section h2 {
+  font-family: 'Shrikhand', serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  color: var(--soil);
+  margin-bottom: 40px;
+  line-height: 1.15;
+}
+
+/* ── PRODUCT GRID ── */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 20px;
+}
+.product-card {
+  background: var(--offwhite);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(60,98,103,0.12);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.product-card:hover { box-shadow: 0 8px 32px rgba(60,98,103,0.14); transform: translateY(-2px); }
+
+/* product image — supports dual front/rear flip */
+.product-img {
+  background: var(--teal-lt);
+  height: 260px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+}
+.product-img img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 20px;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.product-img .img-rear { opacity: 0; }
+.product-card:hover .product-img .img-front { opacity: 0;  transform: scale(1.05); }
+.product-card:hover .product-img .img-rear  { opacity: 1;  transform: scale(1.05); }
+
+.product-coming-soon {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ash);
+  background: rgba(60,98,103,0.08);
+  border: 1px solid rgba(60,98,103,0.18);
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: default;
+}
+.product-body { padding: 20px; }
+.product-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 6px;
+}
+.product-name {
+  font-family: 'Shrikhand', serif;
+  font-size: 1.3rem;
+  color: var(--soil);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+.product-desc {
+  font-size: 0.78rem;
+  color: var(--ash);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+.product-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.product-price {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--soil);
+}
+.product-price span {
+  font-size: 0.6rem;
+  color: var(--ash);
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 2px;
+}
+.btn-add {
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-add:hover { background: var(--teal-dk); }
+
+/* ── FEATURE STRIP ── */
+.features {
+  background: var(--teal-dk);
+  padding: 48px 24px;
+}
+.features-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 32px;
+  text-align: center;
+}
+.feature-icon { font-size: 1.8rem; margin-bottom: 10px; }
+.feature-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal-lt);
+  margin-bottom: 6px;
+}
+.feature-body { font-size: 0.78rem; color: rgba(255,255,255,0.6); line-height: 1.5; }
+
+/* ── ABOUT ── */
+.about-section { background: var(--cream); }
+.about-inner { max-width: 640px; }
+.about-inner p {
+  font-size: 0.95rem;
+  color: var(--ash);
+  line-height: 1.72;
+}
+.about-inner p + p { margin-top: 14px; }
+
+/* ── TESTIMONIAL ── */
+.testimonial-section { background: var(--offwhite); }
+.testimonial-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+.testimonial-quote {
+  font-family: 'Shrikhand', serif;
+  font-size: clamp(1.2rem, 3vw, 1.7rem);
+  color: var(--teal-dk);
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+.testimonial-source {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+/* ── NEWSLETTER ── */
+.newsletter {
+  background: var(--teal);
+  padding: 56px 24px;
+  text-align: center;
+}
+.newsletter h2 {
+  font-family: 'Shrikhand', serif;
+  font-size: 1.8rem;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.newsletter p {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 24px;
+}
+.newsletter-form {
+  display: flex;
+  gap: 8px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.newsletter-form input {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+.newsletter-form input::placeholder { color: rgba(255,255,255,0.45); }
+.newsletter-form button {
+  background: #fff;
+  color: var(--teal-dk);
+  border: none;
+  border-radius: 8px;
+  padding: 11px 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--soil);
+  padding: 32px 24px;
+  text-align: center;
+}
+.footer-brand {
+  font-family: 'Shrikhand', serif;
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 12px;
+}
+.footer-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  list-style: none;
+  margin-bottom: 20px;
+}
+.footer-links a {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-links a:hover { color: rgba(255,255,255,0.7); }
+.footer-copy {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ── TEST BANNER ── */
+.test-banner {
+  background: var(--alert);
+  color: #fff;
+  text-align: center;
+  padding: 7px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── DIAGNOSTIC FAB ── */
+#dbg-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  z-index: 998;
+  background: var(--soil);
+  color: var(--teal-lt);
+  border: 1px solid rgba(60,98,103,0.35);
+  border-radius: 50px;
+  padding: 12px 20px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(28,18,8,0.4), 0 1px 0 rgba(212,232,234,0.06) inset;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+}
+#dbg-fab:hover {
+  background: var(--teal-dk);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(28,18,8,0.45), 0 0 0 1px rgba(60,98,103,0.5);
+}
+#dbg-fab:active { transform: translateY(0); }
+#dbg-fab svg { flex-shrink: 0; opacity: 0.9; }
+
+#dbg-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(28,18,8,0.55);
+  align-items: center;
+  justify-content: center;
+}
+#dbg-modal.dbg-open { display: flex; }
+#dbg-frame-wrap {
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  max-height: 100dvh;
+  background: #F4F2E8;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#dbg-iframe { flex: 1; border: none; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+
+<div class="test-banner">⚠ Test Environment — dropbearslurry-del.github.io</div>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <img src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="Dropbear Slurry" class="nav-logo-img" width="32" height="32">
+    Dropbear Slurry
+  </div>
+  <ul class="nav-links">
+    <li><a href="#products">Buy Liquid Fertiliser</a></li>
+    <li><a href="about.html">About Us</a></li>
+    <li><a href="msds.html">MSDS</a></li>
+    <li><a href="#soil" style="opacity:0.4">Living Soil — Coming Soon</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="nav-cart">Cart (0)</div>
+  <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+</nav>
+
+<section class="hero">
+  <p class="hero-eyebrow">Australian made &amp; owned · Queensland</p>
+  <h1>Feed Your Plants<br>Like You Mean It</h1>
+  <p class="hero-sub">Commercial-grade liquid nutrition for real growers. K-666 and K-333 Plant Tonics — concentrated, fast-absorbing, pH-balanced.</p>
+  <a href="#products" class="hero-cta">Shop Tonics</a>
+</section>
+
+<div class="strip">Made in Queensland · pH 6.5–6.8 · Not classified as hazardous</div>
+
+<section class="section" id="products">
+  <p class="section-label">Fertiliser</p>
+  <h2>Tonics</h2>
+  <div class="product-grid">
+
+    <div class="product-card">
+      <div class="product-img">
+        <img class="img-front" loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/549bb5bfbad951c7b68a4c02c8790d323461d5a9/original.png" alt="K-666 Plant Tonic 1L — front">
+        <img class="img-rear"  loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/4d03ff29fdf483d81400b497fb9b260158b6dd7c/original.png" alt="K-666 Plant Tonic 1L — rear">
+      </div>
+      <div class="product-body">
+        <p class="product-tag">Tonics</p>
+        <h3 class="product-name">K-666 Plant Tonic — 1L</h3>
+        <p class="product-desc">Same powerful formula. Starter size. Ideal for pots, beds, and small plots. Fast-absorbing phosphorus &amp; nitrogen at pH 6.5–6.8.</p>
+        <div class="product-footer">
+          <div class="product-price"><span>AUD</span>$40.00</div>
+          <button class="btn-add">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <div class="product-img">
+        <img class="img-front" loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/98aa443d53148b9f23dc3e2f593fb0bd7a6e8d40/original.png" alt="K-333 Plant Tonic 1L — front">
+        <img class="img-rear"  loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/8f2b7a46707aa5b9245732470111c6b4174a9f79/original.png" alt="K-333 Plant Tonic 1L — rear">
+      </div>
+      <div class="product-body">
+        <p class="product-tag">Tonics</p>
+        <h3 class="product-name">K-333 Plant Tonic — 1L</h3>
+        <p class="product-desc">Gentle yet powerful. Baby plant &amp; cutting approved. Lower potassium silicate for sensitive or newer plants. pH 6.5–6.8.</p>
+        <div class="product-footer">
+          <div class="product-price"><span>AUD</span>$40.00</div>
+          <button class="btn-add">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <div class="product-img">
+        <img class="img-front" loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/4894e9385838d3f999310177710bc75bcde9e3e4/original.png" alt="K-666 Plant Tonic 5L — front">
+        <img class="img-rear"  loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/1153bdbbd317d2a32b52a6538e7d6c0d39eeee5d/original.png" alt="K-666 Plant Tonic 5L — rear">
+      </div>
+      <div class="product-body">
+        <p class="product-tag">Tonics</p>
+        <h3 class="product-name">K-666 Plant Tonic — 5L</h3>
+        <p class="product-desc">Serious nutrition for serious growers. Commercial-grade (36.5% concentrate) for market gardens, small farms, and high-output plots.</p>
+        <div class="product-footer">
+          <div class="product-price"><span>AUD</span>$170.00</div>
+          <button class="btn-add">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="section" id="soil" style="padding-top: 0;">
+  <p class="section-label">Coming Soon</p>
+  <h2>Soil</h2>
+  <div class="product-grid" style="max-width: 340px;">
+
+    <div class="product-card">
+      <div class="product-img" style="background: #2D2215;">
+        <span style="font-size:3.2rem">🪴</span>
+      </div>
+      <div class="product-body">
+        <p class="product-tag">Soil</p>
+        <h3 class="product-name">Premium Soil</h3>
+        <p class="product-desc">Good things take time to grow. A premium blend designed to give your plants the foundation they deserve. Australian owned, made in Queensland.</p>
+        <div class="product-footer">
+          <div class="product-price"><span>AUD</span>—</div>
+          <span class="product-coming-soon">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="section" id="merch" style="padding-top: 0;">
+  <p class="section-label">Merchandise</p>
+  <h2>Merch</h2>
+  <div class="product-grid" style="max-width: 340px;">
+
+    <div class="product-card">
+      <div class="product-img">
+        <img class="img-front" loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/496b9926a8ac0ff71476768e2e063ab9f6e6403b/original.jpeg" alt="Dropbear Slurry 11oz Coffee Mug">
+        <img class="img-rear"  loading="lazy" src="https://items-images-production.s3.us-west-2.amazonaws.com/files/c441b7c55ee14a1fbce36bd241b1c1f3c39bd155/original.png"  alt="Dropbear Slurry 11oz Coffee Mug — detail">
+      </div>
+      <div class="product-body">
+        <p class="product-tag">Merch</p>
+        <h3 class="product-name">11oz Coffee Mug</h3>
+        <p class="product-desc">Rep the brand. 11oz ceramic mug with Dropbear Slurry branding.</p>
+        <div class="product-footer">
+          <div class="product-price"><span>AUD</span>$13.99</div>
+          <span class="product-coming-soon">Sold Out</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="features">
+  <div class="features-inner">
+    <div>
+      <div class="feature-icon">⚗️</div>
+      <p class="feature-title">Concentrated</p>
+      <p class="feature-body">36.5% formula — a little goes a long way. Dilute and apply directly to soil or foliage.</p>
+    </div>
+    <div>
+      <div class="feature-icon">🎯</div>
+      <p class="feature-title">pH Balanced</p>
+      <p class="feature-body">Formulated at pH 6.5–6.8 for maximum nutrient uptake across vegetables, herbs, and ornamentals.</p>
+    </div>
+    <div>
+      <div class="feature-icon">⚡</div>
+      <p class="feature-title">Fast Absorbing</p>
+      <p class="feature-body">Liquid application feeds fast and deep — promoting strong roots, lush foliage, and vigorous growth.</p>
+    </div>
+    <div>
+      <div class="feature-icon">🇦🇺</div>
+      <p class="feature-title">Australian Made</p>
+      <p class="feature-body">Owned and manufactured in Queensland. Not classified as hazardous. Safe for general use.</p>
+    </div>
+  </div>
+</div>
+
+<section class="section about-section" id="about">
+  <div class="about-inner">
+    <p class="section-label">About Us</p>
+    <h2>Built for Growers,<br>Not Shelves</h2>
+    <p>Dropbear Slurry started with a simple idea: growers deserve access to the same commercial-grade nutrition that professionals use — without the industrial minimums or the marketing fluff.</p>
+    <p>K-666 and K-333 Plant Tonics are concentrated liquid fertilisers formulated in Queensland with a focus on fast uptake, pH balance, and plant safety. K-666 is built for established plants and heavy feeders. K-333 is our gentler formula — lower potassium silicate, ideal for cuttings, seedlings, and sensitive species.</p>
+    <p>Australian owned. Made local. Grown serious.</p>
+  </div>
+</section>
+
+<section class="section testimonial-section">
+  <div class="testimonial-inner">
+    <p class="section-label">What growers say</p>
+    <blockquote class="testimonial-quote">"Amazing products with service to match"</blockquote>
+    <p class="testimonial-source">— Ipswich, QLD</p>
+  </div>
+</section>
+
+<section class="newsletter" id="contact">
+  <h2>Stay in the Loop</h2>
+  <p>New products, growing tips, and the occasional deal. No spam — just good stuff.</p>
+  <div class="newsletter-form">
+    <input type="email" placeholder="your@email.com">
+    <button type="submit">Sign Up</button>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">Dropbear Slurry</div>
+  <ul class="footer-links">
+    <li><a href="#products">Shop</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="msds.html">MSDS</a></li>
+    <li><a href="contact.html">Contact</a></li>
+    <li><a href="#">Privacy Policy</a></li>
+  </ul>
+  <p class="footer-copy">© 2026 Dropbear Slurry Pty Ltd. · Made in Queensland, Australia</p>
+</footer>
+
+<!-- Diagnostic FAB + Modal -->
+<button id="dbg-fab" aria-label="Diagnose my plant">
+  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+    <path d="M13 1.5C13 1.5 7.5 1.5 4.5 4.5C1.5 7.5 1.5 13 1.5 13C1.5 13 7 11.8 9.5 9.5C12 7.2 13 1.5 13 1.5Z" fill="currentColor"/>
+    <path d="M1.5 13L6.5 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  </svg>
+  Diagnose my plant
+</button>
+<div id="dbg-modal" role="dialog" aria-modal="true" aria-label="Plant Diagnostic">
+  <div id="dbg-frame-wrap">
+    <iframe id="dbg-iframe" src="about:blank" title="Plant Diagnostic"></iframe>
+  </div>
+</div>
+
+<script>
+(function () {
+  var DBG_KEY = 'dbg_ak';
+  var DBG_URL = './diagnose.html';
+
+  // Seed API key from URL fragment: /#key=sk-ant-...
+  (function seedKey() {
+    var hash = window.location.hash;
+    if (hash && hash.indexOf('#key=') === 0) {
+      var k = hash.slice(5);
+      if (k) sessionStorage.setItem(DBG_KEY, k);
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  })();
+
+  function openDiag() {
+    var key = sessionStorage.getItem(DBG_KEY) || '';
+    document.getElementById('dbg-iframe').src = DBG_URL + '#key=' + encodeURIComponent(key);
+    document.getElementById('dbg-modal').classList.add('dbg-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDiag() {
+    document.getElementById('dbg-modal').classList.remove('dbg-open');
+    document.getElementById('dbg-iframe').src = 'about:blank';
+    document.body.style.overflow = '';
+  }
+  document.getElementById('dbg-fab').onclick = openDiag;
+  document.getElementById('dbg-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeDiag();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeDiag();
+  });
+
+  // Mobile nav toggle
+  var navToggle = document.querySelector('.nav-toggle');
+  var nav = document.querySelector('.nav');
+  if (navToggle) {
+    navToggle.addEventListener('click', function () {
+      var open = nav.classList.toggle('nav-open');
+      navToggle.setAttribute('aria-expanded', String(open));
+      navToggle.textContent = open ? '✕' : '☰';
+    });
+    document.querySelectorAll('.nav-links a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        nav.classList.remove('nav-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        navToggle.textContent = '☰';
+      });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

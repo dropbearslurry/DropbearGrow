@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSDS — Dropbear Slurry</title>
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --teal:    #3C6267;
+  --teal-dk: #2A464A;
+  --teal-lt: #D4E8EA;
+  --cream:   #F5F0E8;
+  --offwhite:#FAFAF5;
+  --soil:    #1C1208;
+  --ash:     #6B7B7D;
+  --alert:   #C45A2A;
+  --green:   #7A9B2E;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--cream); font-family: 'IBM Plex Sans', sans-serif; color: var(--soil); }
+
+/* ── TEST BANNER ── */
+.test-banner {
+  background: var(--alert); color: #fff; text-align: center; padding: 7px 16px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--teal-dk); padding: 0 24px;
+  display: flex; align-items: center; height: 56px; gap: 32px;
+}
+.nav-brand { font-family: 'Shrikhand', serif; font-size: 1.15rem; color: #fff; letter-spacing: 0.02em; white-space: nowrap; flex-shrink: 0; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.nav-logo-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.2); flex-shrink: 0; }
+.nav-links { display: flex; gap: 24px; list-style: none; flex: 1; }
+.nav-links a {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.72); text-decoration: none;
+  transition: color 0.15s; white-space: nowrap;
+}
+.nav-links a:hover, .nav-links a.active { color: #fff; }
+.nav-toggle {
+  display: none; background: none; border: none;
+  color: rgba(255,255,255,0.85); font-size: 1.3rem;
+  cursor: pointer; padding: 4px 0 4px 8px;
+  margin-left: auto; line-height: 1; flex-shrink: 0;
+}
+@media (max-width: 700px) {
+  .nav { height: auto; padding: 12px 20px; flex-wrap: wrap; gap: 0; }
+  .nav-brand { flex: 1; }
+  .nav-toggle { display: flex; align-items: center; }
+  .nav-links { display: none; width: 100%; flex-direction: column; gap: 0; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; padding-bottom: 6px; }
+  .nav-links li { padding: 8px 0; }
+  .nav-links a { font-size: 0.75rem; }
+  .nav.nav-open .nav-links { display: flex; }
+}
+
+/* ── PAGE HERO ── */
+.page-hero {
+  background: var(--teal); padding: 56px 24px 64px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.page-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 60% 40%, rgba(255,255,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-eyebrow {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--teal-lt); margin-bottom: 12px;
+}
+.page-hero h1 {
+  font-family: 'Shrikhand', serif; font-size: clamp(2rem, 5vw, 3.2rem);
+  color: #fff; line-height: 1.1; letter-spacing: 0.01em;
+  margin-bottom: 14px;
+}
+.page-hero p {
+  font-size: 0.9rem; color: rgba(255,255,255,0.65); max-width: 480px; margin: 0 auto; line-height: 1.6;
+}
+
+/* ── CONTENT ── */
+.content { max-width: 800px; margin: 0 auto; padding: 64px 24px; }
+
+.section-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-bottom: 10px;
+}
+.content h2 {
+  font-family: 'Shrikhand', serif; font-size: clamp(1.5rem, 3vw, 2rem);
+  color: var(--soil); margin-bottom: 32px; line-height: 1.15;
+}
+
+/* ── SDS CARDS ── */
+.sds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+
+.sds-card {
+  background: var(--offwhite);
+  border: 1px solid rgba(60,98,103,0.14);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.sds-card-header {
+  background: var(--teal-dk);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.sds-card-header img {
+  width: 64px; height: 64px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+}
+.sds-header-text { flex: 1; }
+.sds-product-name {
+  font-family: 'Shrikhand', serif; font-size: 1.2rem;
+  color: #fff; line-height: 1.2; margin-bottom: 4px;
+}
+.sds-product-sku {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+}
+
+.sds-card-body { padding: 20px 24px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+
+.sds-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sds-meta-item { }
+.sds-meta-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ash); margin-bottom: 3px;
+}
+.sds-meta-value { font-size: 0.82rem; font-weight: 500; color: var(--soil); }
+
+.sds-desc { font-size: 0.8rem; color: var(--ash); line-height: 1.55; }
+
+.sds-card-footer { padding: 0 24px 20px; }
+.btn-download {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%;
+  background: var(--teal); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 12px 20px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  text-decoration: none; cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-download:hover { background: var(--teal-dk); }
+.btn-download svg { flex-shrink: 0; }
+
+/* ── NOTICE ── */
+.notice {
+  margin-top: 48px;
+  background: rgba(60,98,103,0.07);
+  border: 1px solid rgba(60,98,103,0.15);
+  border-left: 3px solid var(--teal);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+.notice p {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 0.04em; color: var(--ash); line-height: 1.6;
+}
+.notice strong { color: var(--teal-dk); }
+
+/* ── FOOTER ── */
+footer { background: var(--soil); padding: 32px 24px; text-align: center; }
+.footer-brand { font-family: 'Shrikhand', serif; font-size: 1.2rem; color: rgba(255,255,255,0.5); margin-bottom: 12px; }
+.footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; list-style: none; margin-bottom: 20px; }
+.footer-links a { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.15s; }
+.footer-links a:hover { color: rgba(255,255,255,0.7); }
+.footer-copy { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; letter-spacing: 0.08em; color: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<div class="test-banner">⚠ Test Environment — dropbearslurry-del.github.io</div>
+
+<nav class="nav">
+  <a href="index.html" class="nav-brand">
+    <img src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="Dropbear Slurry" class="nav-logo-img" width="32" height="32">
+    Dropbear Slurry
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html#products">Buy Liquid Fertiliser</a></li>
+    <li><a href="about.html">About Us</a></li>
+    <li><a href="msds.html" class="active">MSDS</a></li>
+    <li><a href="index.html#soil" style="opacity:0.4">Living Soil — Coming Soon</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+</nav>
+
+<div class="page-hero">
+  <p class="page-eyebrow">Safety Data</p>
+  <h1>Material Safety<br>Data Sheets</h1>
+  <p>Download the SDS for each product. Required for safe handling, storage, and compliance.</p>
+</div>
+
+<main class="content">
+  <p class="section-label">Documents</p>
+  <h2>Product SDS</h2>
+
+  <div class="sds-grid">
+
+    <div class="sds-card">
+      <div class="sds-card-header">
+        <img src="https://items-images-production.s3.us-west-2.amazonaws.com/files/549bb5bfbad951c7b68a4c02c8790d323461d5a9/original.png" alt="K-666 Plant Tonic 1L">
+        <div class="sds-header-text">
+          <p class="sds-product-name">K-666 Plant Tonic</p>
+          <p class="sds-product-sku">SKU: DSLF-01-666 / DSLF-05-666</p>
+        </div>
+      </div>
+      <div class="sds-card-body">
+        <div class="sds-meta">
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">Document</p>
+            <p class="sds-meta-value">SDS — GHS Format</p>
+          </div>
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">Format</p>
+            <p class="sds-meta-value">PDF · 5 pages</p>
+          </div>
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">pH</p>
+            <p class="sds-meta-value">6.5 – 6.8</p>
+          </div>
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">Hazard Class</p>
+            <p class="sds-meta-value">Not classified</p>
+          </div>
+        </div>
+        <p class="sds-desc">Full-strength NPK liquid fertiliser for established plants and heavy feeders. Concentrated formula (36.5%). Safe for general use.</p>
+      </div>
+      <div class="sds-card-footer">
+        <a class="btn-download" href="https://www.dropbearslurry.com.au/uploads/b/1f7ceb20-ef53-11f0-b89e-a9eb978e2036/c9da2220-f1c6-11f0-8472-8b031df907e4.pdf" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download K-666 SDS
+        </a>
+      </div>
+    </div>
+
+    <div class="sds-card">
+      <div class="sds-card-header">
+        <img src="https://items-images-production.s3.us-west-2.amazonaws.com/files/98aa443d53148b9f23dc3e2f593fb0bd7a6e8d40/original.png" alt="K-333 Plant Tonic 1L">
+        <div class="sds-header-text">
+          <p class="sds-product-name">K-333 Plant Tonic</p>
+          <p class="sds-product-sku">SKU: DSLF-01-333</p>
+        </div>
+      </div>
+      <div class="sds-card-body">
+        <div class="sds-meta">
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">Document</p>
+            <p class="sds-meta-value">SDS — GHS Format</p>
+          </div>
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">Format</p>
+            <p class="sds-meta-value">PDF · 5 pages</p>
+          </div>
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">pH</p>
+            <p class="sds-meta-value">6.5 – 6.8</p>
+          </div>
+          <div class="sds-meta-item">
+            <p class="sds-meta-label">Hazard Class</p>
+            <p class="sds-meta-value">Not classified</p>
+          </div>
+        </div>
+        <p class="sds-desc">Gentler NPK formula for seedlings, cuttings, and sensitive species. Lower potassium silicate. Safe for general use.</p>
+      </div>
+      <div class="sds-card-footer">
+        <a class="btn-download" href="https://www.dropbearslurry.com.au/uploads/b/1f7ceb20-ef53-11f0-b89e-a9eb978e2036/f95ebec0-f1c6-11f0-8472-8b031df907e4.pdf" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download K-333 SDS
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="notice">
+    <p>
+      <strong>Safe handling:</strong> These products are not classified as hazardous under the GHS/Work Health and Safety regulations. Always read the SDS before handling. Store in a cool, dry place away from direct sunlight. Keep out of reach of children.
+    </p>
+  </div>
+
+</main>
+
+<footer>
+  <div class="footer-brand">Dropbear Slurry</div>
+  <ul class="footer-links">
+    <li><a href="index.html#products">Shop</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="msds.html">MSDS</a></li>
+    <li><a href="contact.html">Contact</a></li>
+    <li><a href="#">Privacy Policy</a></li>
+  </ul>
+  <p class="footer-copy">© 2026 Dropbear Slurry Pty Ltd. · Made in Queensland, Australia</p>
+</footer>
+
+<script>
+(function () {
+  var navToggle = document.querySelector('.nav-toggle');
+  var nav = document.querySelector('.nav');
+  if (navToggle) {
+    navToggle.addEventListener('click', function () {
+      var open = nav.classList.toggle('nav-open');
+      navToggle.setAttribute('aria-expanded', String(open));
+      navToggle.textContent = open ? '✕' : '☰';
+    });
+    document.querySelectorAll('.nav-links a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        nav.classList.remove('nav-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        navToggle.textContent = '☰';
+      });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

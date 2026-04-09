@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DROPBEAR SLURRY // TEAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0b1a1c;
+  --bg2:        #102224;
+  --bg3:        #152b2e;
+  --border:     #2A464A;
+  --border2:    #3C6267;
+  --teal:       #3C6267;
+  --teal-lt:    #D4E8EA;
+  --cream:      #F5F0E8;
+  --alert:      #C45A2A;
+  --alert-dim:  #6B2A10;
+  --alert-glow: rgba(196,90,42,0.12);
+  --green:      #7A9B2E;
+  --green-dim:  #3d4f17;
+  --red:        #b83a2a;
+  --text:       #8fb8be;
+  --text-dim:   #4a6a70;
+  --text-bright:#D4E8EA;
+  --mono:       'IBM Plex Mono', monospace;
+  --display:    'Shrikhand', serif;
+  --body:       'IBM Plex Sans', sans-serif;
+  --radius:     2px;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Login ─────────────────────────────────────────────────────────── */
+#login-screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); z-index: 100; flex-direction: column;
+}
+
+.login-box {
+  width: 400px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  padding: 48px 40px 44px;
+  position: relative;
+}
+
+.login-box::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+}
+
+.login-logo {
+  font-family: var(--display); font-size: 38px;
+  letter-spacing: 0.04em; color: var(--teal-lt);
+  text-shadow: 0 0 40px rgba(212,232,234,0.25);
+  text-align: center; margin-bottom: 4px;
+}
+
+.login-sub {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.3em;
+  color: var(--text-dim); text-align: center; margin-bottom: 32px;
+  text-transform: uppercase;
+}
+
+.login-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+  color: var(--teal); text-transform: uppercase;
+  margin-bottom: 6px; display: block; margin-top: 16px;
+}
+
+.login-input {
+  width: 100%;
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text-bright); font-family: var(--mono); font-size: 15px;
+  padding: 10px 14px; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  border-radius: var(--radius);
+}
+
+.login-input:focus {
+  border-color: var(--teal-lt);
+  box-shadow: 0 0 0 3px rgba(212,232,234,0.1);
+}
+
+.login-server-note {
+  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  margin-top: 6px; padding: 6px 8px;
+  background: var(--bg3); border-left: 2px solid var(--border2);
+  line-height: 1.6;
+}
+
+.login-btn {
+  width: 100%; margin-top: 24px; padding: 11px;
+  background: transparent; border: 1px solid var(--teal);
+  color: var(--teal-lt); font-family: var(--mono); font-weight: 500;
+  font-size: 13px; letter-spacing: 0.25em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s, color 0.15s, box-shadow 0.2s;
+  border-radius: var(--radius);
+}
+.login-btn:hover {
+  background: var(--teal); color: var(--cream);
+  box-shadow: 0 0 24px rgba(60,98,103,0.4);
+}
+
+/* ── App Shell ──────────────────────────────────────────────────────── */
+#app { display: none; height: 100vh; flex-direction: column; }
+#app.visible { display: flex; }
+
+.topbar {
+  display: flex; align-items: center; height: 52px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 0 20px; flex-shrink: 0; gap: 0; position: relative;
+}
+.topbar::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,transparent 0%,var(--border2) 30%,var(--border2) 70%,transparent 100%);
+  opacity: 0.6;
+}
+
+.topbar-logo {
+  font-family: var(--display); font-size: 20px;
+  letter-spacing: 0.04em; color: var(--teal-lt);
+  text-shadow: 0 0 20px rgba(212,232,234,0.2); margin-right: 24px;
+}
+
+.topbar-divider { width: 1px; height: 22px; background: var(--border2); margin: 0 20px; }
+
+.topbar-tabs { display: flex; gap: 2px; flex: 1; }
+
+.tab-btn {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 6px 16px;
+  background: transparent; border: 1px solid transparent;
+  color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+  border-radius: var(--radius);
+}
+.tab-btn:hover { color: var(--text); border-color: var(--border2); }
+.tab-btn.active { color: var(--teal-lt); border-color: var(--teal); background: rgba(60,98,103,0.18); }
+
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.topbar-user {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px;
+}
+.topbar-user .dot {
+  width: 7px; height: 7px; background: var(--green); border-radius: 50%;
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+.conn-status {
+  font-family: var(--mono); font-size: 10px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 8px; border-radius: var(--radius); border: 1px solid var(--border);
+}
+.conn-status.connected  { color: var(--green); border-color: var(--green-dim); }
+.conn-status.disconnected { color: var(--red); border-color: #4a1a10; }
+.conn-status.connecting { color: var(--teal-lt); border-color: var(--teal); }
+.conn-status.no-server  { color: var(--text-dim); border-color: var(--border); }
+.conn-dot { width:6px;height:6px;border-radius:50%;background:currentColor; }
+
+/* ── Main ───────────────────────────────────────────────────────────── */
+.main { flex:1; overflow:hidden; display:flex; }
+.panel { display:none; flex:1; overflow:hidden; }
+.panel.active { display:flex; }
+
+/* ── Chat Panel ─────────────────────────────────────────────────────── */
+.chat-layout { display:flex; flex:1; overflow:hidden; }
+
+.chat-sidebar {
+  width: 200px; flex-shrink: 0;
+  background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-section { padding: 16px 16px 8px; }
+.sidebar-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--teal);
+  margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+#user-list { list-style:none; display:flex; flex-direction:column; gap:4px; }
+#user-list li {
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+  padding: 3px 6px; display:flex; align-items:center; gap:7px;
+}
+#user-list li::before {
+  content:''; width:6px; height:6px; background:var(--green);
+  border-radius:50%; box-shadow:0 0 6px var(--green); flex-shrink:0;
+}
+#user-list li.is-you { color: var(--teal-lt); }
+
+.chat-main { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+
+.chat-status-strip {
+  height:28px; background:var(--bg3); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 16px; gap:20px; flex-shrink:0;
+}
+.status-item { font-family:var(--mono); font-size:10px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+.status-item span { color:var(--teal-lt); }
+
+/* Server config banner */
+.server-banner {
+  background: linear-gradient(90deg, var(--bg3), var(--bg2));
+  border-bottom: 1px solid var(--border2);
+  padding: 10px 20px;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.server-banner.hidden { display: none; }
+.server-banner-text { font-family: var(--mono); font-size: 11px; color: var(--teal-lt); flex: 1; }
+.server-url-input {
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text-bright); font-family: var(--mono); font-size: 12px;
+  padding: 5px 10px; outline: none; width: 280px;
+  border-radius: var(--radius); transition: border-color 0.2s;
+}
+.server-url-input:focus { border-color: var(--teal-lt); }
+.server-apply-btn {
+  background: transparent; border: 1px solid var(--teal);
+  color: var(--teal-lt); font-family: var(--mono); font-size: 11px;
+  padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+  border-radius: var(--radius); letter-spacing: 0.1em;
+}
+.server-apply-btn:hover { background: var(--teal); color: var(--cream); }
+
+#messages {
+  flex:1; overflow-y:auto; padding:16px 20px;
+  display:flex; flex-direction:column; gap:2px; scroll-behavior:smooth;
+}
+#messages::-webkit-scrollbar { width:4px; }
+#messages::-webkit-scrollbar-track { background:transparent; }
+#messages::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+.msg {
+  display:flex; gap:12px; padding:4px 6px;
+  border-radius:var(--radius); transition:background 0.1s;
+  animation: msgIn 0.15s ease-out;
+}
+@keyframes msgIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+.msg:hover { background: var(--bg3); }
+
+.msg-ts { font-family:var(--mono); font-size:10px; color:var(--text-dim); flex-shrink:0; margin-top:3px; width:60px; text-align:right; }
+.msg-user { font-family:var(--mono); font-size:12px; flex-shrink:0; width:120px; text-align:right; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.msg-body { font-family:var(--body); font-size:14px; color:var(--text-bright); flex:1; word-break:break-word; line-height:1.45; }
+.msg.system .msg-user { color:var(--text-dim); font-style:italic; }
+.msg.system .msg-body { color:var(--text-dim); font-style:italic; font-size:12px; }
+
+.chat-input-bar {
+  background:var(--bg2); border-top:1px solid var(--border);
+  padding:12px 16px; display:flex; gap:10px; align-items:center; flex-shrink:0;
+}
+.chat-prompt { font-family:var(--mono); font-size:12px; color:var(--teal); flex-shrink:0; }
+#chat-input {
+  flex:1; background:transparent; border:none; outline:none;
+  color:var(--text-bright); font-family:var(--mono); font-size:13px; caret-color:var(--teal-lt);
+}
+#chat-input::placeholder { color:var(--text-dim); }
+#chat-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.send-btn {
+  background:transparent; border:1px solid var(--border2); color:var(--text-dim);
+  font-family:var(--mono); font-size:11px; letter-spacing:0.1em; padding:5px 12px;
+  cursor:pointer; transition:all 0.15s; border-radius:var(--radius); flex-shrink:0;
+}
+.send-btn:hover { border-color:var(--teal-lt); color:var(--teal-lt); }
+
+/* ── Repo Panel ─────────────────────────────────────────────────────── */
+.repo-layout { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+
+.repo-toolbar {
+  background:var(--bg2); border-bottom:1px solid var(--border);
+  padding:10px 20px; display:flex; align-items:center; gap:16px; flex-shrink:0;
+}
+
+.repo-cats {
+  background:var(--bg3); border-bottom:1px solid var(--border);
+  padding:6px 20px; display:flex; align-items:center; gap:6px; flex-shrink:0; flex-wrap:wrap;
+}
+.cat-btn {
+  font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase;
+  padding:3px 10px; background:transparent; border:1px solid var(--border2);
+  color:var(--text-dim); cursor:pointer; transition:all 0.15s; border-radius:var(--radius);
+}
+.cat-btn:hover { color:var(--text); border-color:var(--border2); }
+.cat-btn.active { color:var(--teal-lt); border-color:var(--teal); background:rgba(60,98,103,0.18); }
+.cat-label { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.1em; margin-right:4px; }
+.repo-title { font-family:var(--mono); font-weight:500; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-dim); }
+
+.repo-note {
+  flex: 1; font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  text-align: right; letter-spacing: 0.05em;
+}
+.repo-note a { color: var(--teal-lt); text-decoration: none; }
+.repo-note a:hover { text-decoration: underline; }
+
+.repo-refresh-btn {
+  background: transparent; border: 1px solid var(--border2); color: var(--text-dim);
+  font-family: var(--mono); font-size: 11px; padding: 5px 12px;
+  cursor: pointer; transition: all 0.15s; border-radius: var(--radius);
+}
+.repo-refresh-btn:hover { border-color: var(--teal-lt); color: var(--teal-lt); }
+
+.upload-group { display:flex; align-items:center; gap:0; flex-shrink:0; }
+.upload-cat-select {
+  background:var(--bg3); border:1px solid var(--border2); border-right:none;
+  color:var(--text-dim); font-family:var(--mono); font-size:10px; letter-spacing:0.08em;
+  padding:5px 8px; cursor:pointer; border-radius:var(--radius) 0 0 var(--radius);
+  text-transform:uppercase; outline:none; transition:border-color 0.15s;
+}
+.upload-cat-select:focus { border-color:var(--teal); color:var(--text); }
+.file-upload-label {
+  background: transparent; border: 1px solid var(--border2); color: var(--text-dim);
+  font-family: var(--mono); font-size: 11px; padding: 5px 12px;
+  cursor: pointer; transition: all 0.15s; border-radius: 0 var(--radius) var(--radius) 0;
+  letter-spacing: 0.1em; white-space: nowrap;
+}
+.file-upload-label:hover { border-color: var(--green); color: var(--green); }
+.file-upload-label.uploading { border-color: var(--teal); color: var(--teal); cursor: wait; }
+
+.file-list-container { flex:1; overflow-y:auto; }
+.file-list-container::-webkit-scrollbar { width:4px; }
+.file-list-container::-webkit-scrollbar-track { background:transparent; }
+.file-list-container::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+.file-list-header {
+  display:grid; grid-template-columns:1fr 90px 180px 140px;
+  padding:8px 20px; background:var(--bg3); border-bottom:1px solid var(--border);
+  font-family:var(--mono); font-size:10px; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--text-dim);
+  position:sticky; top:0; z-index:1;
+}
+#file-list { list-style:none; }
+.file-item {
+  display:grid; grid-template-columns:1fr 90px 180px 140px;
+  padding:10px 20px; border-bottom:1px solid var(--border);
+  align-items:center; transition:background 0.1s; animation:msgIn 0.15s ease-out;
+}
+.file-item:hover { background:var(--bg3); }
+.file-name { font-family:var(--mono); font-size:13px; color:var(--text-bright); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:16px; }
+.file-ext { display:inline-block; font-size:10px; padding:1px 5px; background:var(--bg3); border:1px solid var(--border2); color:var(--teal-lt); border-radius:2px; margin-right:8px; vertical-align:middle; font-family:var(--mono); letter-spacing:0.05em; }
+.file-size { font-family:var(--mono); font-size:12px; color:var(--text-dim); }
+.file-type { font-family:var(--mono); font-size:11px; color:var(--text-dim); }
+.file-actions { display:flex; gap:4px; justify-content:flex-end; }
+.file-btn {
+  background:transparent; border:1px solid var(--border2); color:var(--text-dim);
+  font-family:var(--mono); font-size:11px; padding:3px 10px; cursor:pointer;
+  transition:all 0.15s; border-radius:var(--radius); text-decoration:none;
+  display:inline-flex; align-items:center; gap:4px;
+}
+.file-btn:hover { border-color:var(--teal-lt); color:var(--teal-lt); }
+.file-btn.del-btn:hover { border-color:var(--red); color:var(--red); }
+
+.file-cat-header {
+  padding:6px 20px; background:var(--bg3); border-bottom:1px solid var(--border);
+  font-family:var(--mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--teal); display:flex; align-items:center; gap:8px;
+}
+.file-cat-header::before { content:''; display:block; width:6px; height:6px; border-radius:50%; background:var(--teal); }
+
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; color:var(--text-dim); gap:12px; }
+.empty-icon { font-size:40px; opacity:0.3; }
+.empty-text { font-family:var(--mono); font-size:12px; letter-spacing:0.1em; }
+.empty-hint { font-family:var(--mono); font-size:11px; color:var(--text-dim); margin-top:4px; }
+.empty-hint a { color:var(--teal-lt); text-decoration:none; }
+.empty-hint a:hover { text-decoration:underline; }
+
+.repo-statusbar {
+  background:var(--bg2); border-top:1px solid var(--border);
+  padding:5px 20px; display:flex; align-items:center; gap:24px; flex-shrink:0;
+}
+.repo-stat { font-family:var(--mono); font-size:10px; color:var(--text-dim); }
+.repo-stat b { color:var(--teal-lt); font-weight:normal; }
+
+/* ── Toast ──────────────────────────────────────────────────────────── */
+#toast-container { position:fixed; bottom:20px; right:20px; z-index:1000; display:flex; flex-direction:column; gap:8px; }
+.toast {
+  background:var(--bg3); border:1px solid var(--border2); border-left:3px solid var(--green);
+  padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--text);
+  border-radius:var(--radius); animation:toastIn 0.2s ease-out; max-width:320px;
+}
+.toast.error { border-left-color:var(--red); }
+.toast.warn  { border-left-color:var(--alert); }
+@keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Dropbear Slurry</div>
+    <div class="login-sub">team · secure · internal</div>
+    <label class="login-label" for="username-input">callsign</label>
+    <input class="login-input" id="username-input" type="text" maxlength="24" placeholder="enter your handle" autocomplete="off" spellcheck="false" />
+    <label class="login-label" for="server-input-login">chat server <span style="opacity:.5">(optional)</span></label>
+    <input class="login-input" id="server-input-login" type="text" placeholder="ws://your-server:7331" autocomplete="off" spellcheck="false" />
+    <div class="login-server-note">
+      Leave blank to browse files only.<br>
+      Run <code style="color:var(--teal-lt)">./run.sh</code> on a shared host for live chat.
+    </div>
+    <button class="login-btn" id="login-btn">AUTHENTICATE</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">Dropbear Slurry</div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-tabs">
+      <button class="tab-btn active" data-panel="chat">⬡ COMMS</button>
+      <button class="tab-btn" data-panel="repo">⬡ REPOSITORY</button>
+    </div>
+    <div class="topbar-right">
+      <div id="conn-indicator" class="conn-status no-server">
+        <div class="conn-dot"></div><span>NO SERVER</span>
+      </div>
+      <div class="topbar-divider"></div>
+      <div class="topbar-user"><div class="dot"></div><span id="topbar-username">—</span></div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Chat Panel -->
+    <div class="panel active" id="panel-chat">
+      <div class="chat-layout">
+        <div class="chat-sidebar">
+          <div class="sidebar-section">
+            <div class="sidebar-title">Online</div>
+            <ul id="user-list"></ul>
+          </div>
+        </div>
+        <div class="chat-main">
+          <div class="chat-status-strip">
+            <div class="status-item">channel <span>#general</span></div>
+            <div class="status-item" id="online-count">online <span>0</span></div>
+          </div>
+          <!-- Server config banner -->
+          <div class="server-banner" id="server-banner">
+            <div class="server-banner-text">⬡ chat server</div>
+            <input class="server-url-input" id="server-url-input" type="text" placeholder="ws://hostname:7331" spellcheck="false" autocomplete="off" />
+            <button class="server-apply-btn" id="server-apply-btn">CONNECT</button>
+          </div>
+          <div id="messages"></div>
+          <div class="chat-input-bar">
+            <span class="chat-prompt" id="chat-prompt">▸</span>
+            <input id="chat-input" type="text" maxlength="2000" placeholder="type a message…" autocomplete="off" spellcheck="false" disabled />
+            <button class="send-btn" id="send-btn">SEND ↵</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repo Panel -->
+    <div class="panel" id="panel-repo">
+      <div class="repo-layout">
+        <div class="repo-toolbar">
+          <div class="repo-title">data repository</div>
+          <div class="repo-note" id="repo-server-note"></div>
+          <div class="upload-group">
+            <select class="upload-cat-select" id="upload-cat-select"></select>
+            <label class="file-upload-label" id="upload-label" title="upload file">
+              ↑ UPLOAD
+              <input type="file" id="upload-input" multiple style="display:none" />
+            </label>
+          </div>
+          <button class="repo-refresh-btn" id="repo-refresh-btn">↻ REFRESH</button>
+        </div>
+        <div class="repo-cats" id="repo-cats"></div>
+        <div class="file-list-header">
+          <div>name</div>
+          <div>size</div>
+          <div>modified</div>
+          <div style="text-align:right">actions</div>
+        </div>
+        <div class="file-list-container">
+          <ul id="file-list">
+            <li>
+              <div class="empty-state">
+                <div class="empty-icon">◫</div>
+                <div class="empty-text">loading repository…</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="repo-statusbar">
+          <div class="repo-stat">files: <b id="stat-count">—</b></div>
+          <div class="repo-stat">total size: <b id="stat-size">—</b></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+let username  = '';
+let serverUrl = '';
+let ws        = null;
+let wsReconnectTimer = null;
+let reconnectAttempts = 0;
+let categories = ['general', 'receipts', 'marketing', 'production', 'assets'];
+let activeCategory = null; // null = all
+
+function apiBase() {
+  if (!serverUrl) return null;
+  return serverUrl.replace(/\/$/, '').replace(/^ws(s?):\/\//, 'http$1://');
+}
+
+// ── User colors ───────────────────────────────────────────────────────
+const COLORS = ['#D4E8EA','#C45A2A','#7A9B2E','#9BBFC4','#F5F0E8','#3C6267','#a0c878','#e8b090'];
+const colorMap = {};
+function userColor(u) {
+  if (!colorMap[u]) {
+    const h = [...u].reduce((a,c) => a + c.charCodeAt(0), 0);
+    colorMap[u] = COLORS[h % COLORS.length];
+  }
+  return colorMap[u];
+}
+
+// ── Login ─────────────────────────────────────────────────────────────
+document.getElementById('login-btn').addEventListener('click', doLogin);
+['username-input', 'server-input-login'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+});
+
+function doLogin() {
+  const val = document.getElementById('username-input').value.trim().replace(/\s+/g,'_');
+  if (!val) { document.getElementById('username-input').focus(); return; }
+  username = val;
+
+  const sv = document.getElementById('server-input-login').value.trim();
+  if (sv) {
+    serverUrl = sv;
+    localStorage.setItem('db_server', sv);
+  } else {
+    serverUrl = localStorage.getItem('db_server') || '';
+  }
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('topbar-username').textContent = username;
+  document.getElementById('chat-prompt').textContent = `${username} ▸`;
+
+  document.getElementById('server-url-input').value = serverUrl;
+
+  if (serverUrl) {
+    connectWS(serverUrl);
+    document.getElementById('server-banner').classList.add('hidden');
+  } else {
+    setConnStatus('no-server');
+    buildCategoryUI();
+  }
+
+  loadFiles();
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────
+function setConnStatus(state) {
+  const el = document.getElementById('conn-indicator');
+  el.className = 'conn-status ' + state;
+  const labels = { connected:'CONNECTED', disconnected:'OFFLINE', connecting:'CONNECTING', 'no-server':'NO SERVER' };
+  el.querySelector('span').textContent = labels[state] || state.toUpperCase();
+}
+
+function connectWS(url) {
+  if (!url) return;
+  clearTimeout(wsReconnectTimer);
+  setConnStatus('connecting');
+  serverUrl = url;
+  localStorage.setItem('db_server', url);
+  document.getElementById('server-url-input').value = url;
+
+  const wsUrl = url.replace(/\/$/, '') + '/ws/' + encodeURIComponent(username);
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = async () => {
+    setConnStatus('connected');
+    reconnectAttempts = 0;
+    document.getElementById('chat-input').disabled = false;
+    document.getElementById('server-banner').classList.add('hidden');
+    sysMsg('connected to ' + url);
+    await fetchCategories();
+    loadFiles();
+  };
+
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'userlist') renderUserList(msg.users);
+    else if (msg.type === 'chat' || msg.type === 'system') appendMessage(msg);
+  };
+
+  ws.onclose = () => {
+    setConnStatus('disconnected');
+    document.getElementById('chat-input').disabled = true;
+    reconnectAttempts++;
+    const delay = Math.min(3000 * reconnectAttempts, 15000);
+    wsReconnectTimer = setTimeout(() => connectWS(serverUrl), delay);
+  };
+
+  ws.onerror = () => ws.close();
+}
+
+// Server banner connect button
+document.getElementById('server-apply-btn').addEventListener('click', () => {
+  const url = document.getElementById('server-url-input').value.trim();
+  if (!url) return;
+  if (ws) { ws.onclose = null; ws.close(); }
+  clearTimeout(wsReconnectTimer);
+  reconnectAttempts = 0;
+  connectWS(url);
+});
+document.getElementById('server-url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('server-apply-btn').click();
+});
+
+// ── Chat ──────────────────────────────────────────────────────────────
+function sysMsg(text) {
+  appendMessage({ type:'system', text, ts: _now() });
+}
+
+function appendMessage(msg) {
+  const c = document.getElementById('messages');
+  const atBottom = c.scrollHeight - c.scrollTop - c.clientHeight < 60;
+  const div = document.createElement('div');
+  div.className = 'msg' + (msg.type === 'system' ? ' system' : '');
+  div.innerHTML = `
+    <div class="msg-ts">${msg.ts||''}</div>
+    <div class="msg-user" style="color:${msg.type==='system'?'':userColor(msg.user||'')}">${msg.type==='system'?'··':(msg.user||'')}</div>
+    <div class="msg-body"></div>
+  `;
+  div.querySelector('.msg-body').textContent = msg.text || '';
+  c.appendChild(div);
+  if (atBottom) c.scrollTop = c.scrollHeight;
+}
+
+function renderUserList(users) {
+  const ul = document.getElementById('user-list');
+  ul.innerHTML = '';
+  document.getElementById('online-count').querySelector('span').textContent = users.length;
+  users.forEach(u => {
+    const li = document.createElement('li');
+    li.textContent = u;
+    li.style.color = u === username ? 'var(--teal-lt)' : userColor(u);
+    if (u === username) li.classList.add('is-you');
+    ul.appendChild(li);
+  });
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ text }));
+  input.value = '';
+}
+
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function _now() {
+  return new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+    if (btn.dataset.panel === 'repo') loadFiles();
+  });
+});
+
+// ── Categories ────────────────────────────────────────────────────────
+async function fetchCategories() {
+  const base = apiBase();
+  if (!base) return;
+  try {
+    const res = await fetch(`${base}/api/categories`);
+    if (res.ok) categories = await res.json();
+  } catch (_) {}
+  buildCategoryUI();
+}
+
+function buildCategoryUI() {
+  // Filter pills
+  const bar = document.getElementById('repo-cats');
+  bar.innerHTML = '';
+  const allBtn = document.createElement('button');
+  allBtn.className = 'cat-btn' + (activeCategory === null ? ' active' : '');
+  allBtn.textContent = 'ALL';
+  allBtn.addEventListener('click', () => { activeCategory = null; updateCatUI(); loadFiles(); });
+  bar.appendChild(allBtn);
+  categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (activeCategory === cat ? ' active' : '');
+    btn.textContent = cat;
+    btn.dataset.cat = cat;
+    btn.addEventListener('click', () => { activeCategory = cat; updateCatUI(); loadFiles(); });
+    bar.appendChild(btn);
+  });
+
+  // Upload category select
+  const sel = document.getElementById('upload-cat-select');
+  sel.innerHTML = '';
+  categories.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+}
+
+function updateCatUI() {
+  document.querySelectorAll('#repo-cats .cat-btn').forEach(btn => {
+    const isAll = !btn.dataset.cat;
+    btn.classList.toggle('active', isAll ? activeCategory === null : btn.dataset.cat === activeCategory);
+  });
+}
+
+// ── File Repository (server API) ──────────────────────────────────────
+document.getElementById('repo-refresh-btn').addEventListener('click', loadFiles);
+
+document.getElementById('upload-input').addEventListener('change', async e => {
+  const base = apiBase();
+  if (!base) { toast('Connect to a server to upload files', 'warn'); return; }
+  const label = document.getElementById('upload-label');
+  const cat   = document.getElementById('upload-cat-select').value || 'general';
+  const files = [...e.target.files];
+  if (!files.length) return;
+  label.classList.add('uploading');
+  for (const file of files) {
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('uploader', username);
+      fd.append('category', cat);
+      const res = await fetch(`${base}/api/files`, { method: 'POST', body: fd });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+    } catch (err) {
+      toast(`Upload failed: ${err.message}`, 'error');
+    }
+  }
+  label.classList.remove('uploading');
+  e.target.value = '';
+  loadFiles();
+});
+
+async function deleteFile(category, name) {
+  const base = apiBase();
+  if (!base) return;
+  try {
+    const res = await fetch(`${base}/api/files/${encodeURIComponent(category)}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    toast(`Deleted ${name}`, 'warn');
+    loadFiles();
+  } catch (err) {
+    toast(`Delete failed: ${err.message}`, 'error');
+  }
+}
+
+function humanSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/1048576).toFixed(1)+' MB';
+}
+
+function getExt(name) {
+  const i = name.lastIndexOf('.');
+  return i >= 0 ? name.slice(i+1).toUpperCase() : '—';
+}
+
+async function loadFiles() {
+  const base = apiBase();
+  const ul   = document.getElementById('file-list');
+  const note = document.getElementById('repo-server-note');
+
+  if (!base) {
+    note.textContent = 'connect to a server to use the repository';
+    note.style.color = 'var(--text-dim)';
+    renderEmpty('no server connected', '');
+    return;
+  }
+
+  note.textContent = base;
+  note.style.color = 'var(--text-dim)';
+  ul.innerHTML = '<li><div class="empty-state"><div class="empty-text">loading…</div></div></li>';
+
+  try {
+    const url = activeCategory
+      ? `${base}/api/files?category=${encodeURIComponent(activeCategory)}`
+      : `${base}/api/files`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const files = await res.json();
+    renderFiles(files, base);
+  } catch (err) {
+    renderEmpty('could not reach server', err.message);
+    toast('Repo load failed: ' + err.message, 'error');
+  }
+}
+
+function renderFiles(files, base) {
+  const ul = document.getElementById('file-list');
+  ul.innerHTML = '';
+
+  if (!files.length) {
+    renderEmpty('no files here', 'use ↑ UPLOAD to share files with the team');
+    return;
+  }
+
+  let totalSize = 0;
+
+  if (activeCategory) {
+    // Flat list — no group headers
+    files.forEach(f => appendFileRow(ul, f, base));
+  } else {
+    // Group by category
+    const grouped = {};
+    files.forEach(f => {
+      (grouped[f.category] = grouped[f.category] || []).push(f);
+    });
+    categories.forEach(cat => {
+      const catFiles = grouped[cat];
+      if (!catFiles || !catFiles.length) return;
+      const header = document.createElement('li');
+      header.className = 'file-cat-header';
+      header.textContent = cat;
+      ul.appendChild(header);
+      catFiles.forEach(f => appendFileRow(ul, f, base));
+    });
+  }
+
+  files.forEach(f => totalSize += f.size || 0);
+  document.getElementById('stat-count').textContent = files.length;
+  document.getElementById('stat-size').textContent = humanSize(totalSize);
+}
+
+function appendFileRow(ul, f, base) {
+  const modified = f.modified
+    ? new Date(f.modified).toLocaleString('en-GB', {dateStyle:'short', timeStyle:'short'})
+    : '—';
+  const li = document.createElement('li');
+  li.className = 'file-item';
+  li.innerHTML = `
+    <div class="file-name"><span class="file-ext">${getExt(f.name)}</span>${f.name}</div>
+    <div class="file-size">${humanSize(f.size||0)}</div>
+    <div class="file-type">${modified}</div>
+    <div class="file-actions">
+      <a class="file-btn" href="${base}/api/files/${encodeURIComponent(f.category)}/${encodeURIComponent(f.name)}" target="_blank" rel="noopener" title="download">↓</a>
+      <button class="file-btn del-btn" title="delete">✕</button>
+    </div>
+  `;
+  li.querySelector('.del-btn').addEventListener('click', () => deleteFile(f.category, f.name));
+  ul.appendChild(li);
+}
+
+function renderEmpty(text, hint='') {
+  document.getElementById('file-list').innerHTML = `
+    <li>
+      <div class="empty-state">
+        <div class="empty-icon">◫</div>
+        <div class="empty-text">${text}</div>
+        ${hint ? `<div class="empty-hint">${hint}</div>` : ''}
+      </div>
+    </li>`;
+  document.getElementById('stat-count').textContent = '0';
+  document.getElementById('stat-size').textContent = '0 B';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type==='error'?' error':type==='warn'?' warn':'');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+</script>
+</body>
+</html>

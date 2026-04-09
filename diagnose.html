@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Diagnose — Dropbear Slurry</title>
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:    #3C6267;
+    --teal-dk: #2A464A;
+    --teal-lt: #D4E8EA;
+    --cream:   #F5F0E8;
+    --offwhite:#FAFAF5;
+    --soil:    #1C1208;
+    --ash:     #6B7B7D;
+    --alert:   #C45A2A;
+  }
+
+  html, body { height: 100%; background: var(--cream); font-family: 'IBM Plex Sans', sans-serif; }
+
+  body {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── TOP NAV ── */
+  .top-nav {
+    padding: 10px 16px;
+    background: var(--teal-dk);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-logo {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(212,232,234,0.25);
+  }
+  .nav-text { flex: 1; }
+  .nav-title {
+    font-family: 'Shrikhand', serif;
+    font-size: 1.15rem;
+    color: #fff;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+  .nav-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.55rem;
+    color: rgba(212,232,234,0.6);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .test-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--alert);
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 10px;
+    flex-shrink: 0;
+  }
+
+  /* ── KEY STATUS BAR ── */
+  .key-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.57rem;
+    letter-spacing: 0.06em;
+    background: rgba(60,98,103,0.07);
+    border-bottom: 1px solid rgba(60,98,103,0.18);
+    color: var(--teal);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .key-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    flex-shrink: 0;
+  }
+  .key-dot.off { background: var(--alert); }
+  .key-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .key-status button {
+    background: none; border: none; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.52rem; color: var(--alert);
+    text-decoration: underline; padding: 0; flex-shrink: 0;
+  }
+
+  /* ── ANSWER TRAIL ── */
+  .answer-trail {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-bottom: 16px; max-height: 72px;
+    overflow-y: auto; scrollbar-width: none;
+  }
+  .answer-trail::-webkit-scrollbar { display: none; }
+  .trail-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.54rem; letter-spacing: 0.05em;
+    background: rgba(60,98,103,0.1);
+    color: var(--teal-dk);
+    border: 1px solid rgba(60,98,103,0.25);
+    border-radius: 20px; padding: 3px 10px;
+  }
+
+  /* ── SCREEN ── */
+  .screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .scroll-area {
+    flex: 1; overflow-y: auto; padding: 20px 16px 48px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* ── BUTTONS ── */
+  .btn-primary, .btn-sky, .btn-outline {
+    border: none; border-radius: 8px; padding: 10px 18px;
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 0.8rem;
+    cursor: pointer; transition: background 0.18s, opacity 0.18s;
+  }
+  .btn-primary { background: var(--teal); color: #fff; font-weight: 600; display: inline-block; }
+  .btn-primary:hover { background: var(--teal-dk); }
+  .btn-primary:active { opacity: 0.8; }
+  .btn-sky {
+    background: var(--teal); color: #fff; font-weight: 600;
+    width: 100%; display: block; text-align: center; margin-top: 10px;
+  }
+  .btn-sky:hover { background: var(--teal-dk); }
+  .btn-sky:active { opacity: 0.8; }
+  .btn-outline {
+    background: transparent; color: var(--soil);
+    border: 1.5px solid rgba(28,18,8,0.16);
+    padding: 10px 16px; width: 100%; text-align: center;
+    display: block; margin-bottom: 8px;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .btn-outline:hover { border-color: rgba(60,98,103,0.4); }
+  .btn-outline:active { border-color: var(--teal); background: rgba(60,98,103,0.05); }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--offwhite); border-radius: 8px; padding: 16px;
+    margin-bottom: 10px; border: 1px solid rgba(60,98,103,0.1);
+  }
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--teal); margin-bottom: 8px;
+  }
+  .card-sub { font-size: 0.82rem; color: var(--ash); line-height: 1.6; }
+
+  /* ── QUESTION PANEL ── */
+  .diag-question {
+    font-family: 'IBM Plex Sans', sans-serif; font-weight: 600;
+    font-size: 1.18rem; color: var(--soil); line-height: 1.35; margin-bottom: 5px;
+  }
+  .diag-sub { font-size: 0.75rem; color: var(--ash); margin-bottom: 14px; line-height: 1.5; }
+
+  .diag-option {
+    background: var(--offwhite);
+    border: 1.5px solid rgba(60,98,103,0.12);
+    border-radius: 8px; padding: 13px 14px; margin-bottom: 8px;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    font-size: 0.82rem; color: var(--soil);
+    text-align: left; width: 100%; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 1px 4px rgba(28,18,8,0.05);
+  }
+  .diag-option:hover {
+    border-color: var(--teal);
+    box-shadow: 0 3px 10px rgba(60,98,103,0.12);
+    background: rgba(212,232,234,0.3);
+  }
+  .diag-option:active { border-color: var(--teal-dk); background: rgba(60,98,103,0.08); box-shadow: none; }
+
+  .opt-icon {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: rgba(60,98,103,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+  }
+  .opt-text-label { font-weight: 500; margin-bottom: 2px; }
+  .opt-text-desc  { font-size: 0.65rem; color: var(--ash); line-height: 1.4; }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    background: var(--soil); border-radius: 8px; padding: 20px;
+    margin-bottom: 10px; border-top: 3px solid var(--teal);
+    position: relative; overflow: hidden;
+  }
+  .result-card::after {
+    content: '✓'; position: absolute; right: 18px; top: 16px;
+    font-size: 1.4rem; color: rgba(212,232,234,0.15);
+  }
+  .result-card .result-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--teal-lt); margin-bottom: 6px;
+  }
+  .result-card .result-title {
+    font-family: 'Shrikhand', serif; font-size: 1.3rem;
+    color: #fff; margin-bottom: 10px; line-height: 1.2;
+  }
+  .result-card .result-body { font-size: 0.78rem; color: rgba(212,232,234,0.82); line-height: 1.65; }
+
+  /* ── API KEY PANEL ── */
+  .api-key-panel {
+    background: var(--offwhite); border: 1.5px solid rgba(60,98,103,0.22);
+    border-radius: 8px; padding: 16px; margin-bottom: 18px;
+  }
+  .api-key-panel .ak-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--teal-dk); margin-bottom: 5px;
+  }
+  .api-key-panel .ak-sub { font-size: 0.75rem; color: var(--ash); margin-bottom: 12px; line-height: 1.45; }
+  .api-key-row { display: flex; gap: 8px; }
+  .api-key-input {
+    flex: 1; padding: 9px 12px; border: 1.5px solid rgba(60,98,103,0.2);
+    border-radius: 7px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem; color: var(--soil); background: var(--cream);
+    outline: none; min-width: 0;
+  }
+  .api-key-input:focus { border-color: var(--teal); }
+
+  /* ── SKELETON ── */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(28,18,8,0.06) 25%, rgba(28,18,8,0.11) 50%, rgba(28,18,8,0.06) 75%);
+    background-size: 200% 100%; animation: shimmer 1.3s infinite; border-radius: 6px;
+  }
+  .skeleton-dk {
+    background: linear-gradient(90deg, rgba(212,232,234,0.07) 25%, rgba(212,232,234,0.13) 50%, rgba(212,232,234,0.07) 75%);
+    background-size: 200% 100%; animation: shimmer 1.3s infinite; border-radius: 6px;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .sk-option { height: 64px; margin-bottom: 9px; border-radius: 8px; }
+  .sk-title  { height: 22px; border-radius: 5px; }
+  .sk-line   { height: 12px; border-radius: 4px; }
+  .w80 { width: 80%; } .w60 { width: 60%; }
+  .mb8 { margin-bottom: 8px; } .mb0 { margin-bottom: 0; }
+
+  /* ── GHOST BACK BUTTON ── */
+  .btn-ghost {
+    background: none; border: none; color: var(--ash);
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.04em; padding: 6px 0; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 6px; transition: color 0.15s;
+  }
+  .btn-ghost:hover { color: var(--teal); }
+
+  /* ── AI BADGE + ERROR ── */
+  .ai-badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.5rem;
+    letter-spacing: 0.07em; color: var(--ash);
+    text-align: right; margin-top: 2px; opacity: 0.4;
+  }
+  .diag-error {
+    background: rgba(196,90,42,0.07); border: 1px solid rgba(196,90,42,0.22);
+    border-radius: 8px; padding: 11px 14px;
+    font-size: 0.75rem; color: var(--alert); margin-bottom: 10px; line-height: 1.4;
+  }
+
+  /* ── TRANSITIONS ── */
+  .fade-in { animation: fadeIn 0.2s ease both; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="top-nav" role="banner">
+    <img class="nav-logo" src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="Dropbear Slurry">
+    <div class="nav-text">
+      <div class="nav-title">Diagnose</div>
+      <div class="nav-sub">AI Plant Health</div>
+    </div>
+    <div class="test-badge">Test</div>
+  </header>
+
+  <div class="key-status" id="key-status">
+    <span class="key-dot" id="key-dot"></span>
+    <span class="key-text" id="key-hint">API key: not set</span>
+    <button onclick="clearKey()">Clear key</button>
+  </div>
+
+  <main class="screen" role="main">
+    <div class="scroll-area" id="diag-content">
+
+      <!-- API key panel -->
+      <div class="api-key-panel" id="api-key-panel" style="display:none">
+        <div class="ak-label">Claude API Key Required</div>
+        <div class="ak-sub">Stored in session only — never sent anywhere except Anthropic's API.</div>
+        <div class="api-key-row">
+          <input class="api-key-input" id="api-key-input" type="password" placeholder="sk-ant-…" autocomplete="off" onkeydown="if(event.key==='Enter')saveApiKey()">
+          <button class="btn-primary" onclick="saveApiKey()">Save</button>
+        </div>
+      </div>
+
+      <!-- Answer trail -->
+      <div class="answer-trail" id="answer-trail" style="display:none"></div>
+
+      <!-- Active question panel -->
+      <div id="question-panel">
+        <div class="diag-question" id="diag-question"></div>
+        <div class="diag-sub" id="diag-sub"></div>
+        <div id="options-container"></div>
+        <button class="btn-ghost" id="back-btn" onclick="goBack()" style="display:none">← Back</button>
+        <div class="ai-badge" id="ai-badge" style="display:none">Powered by Claude</div>
+      </div>
+
+      <!-- Result panel -->
+      <div id="result-panel" style="display:none">
+        <div class="result-card">
+          <div class="result-label" id="result-label">Diagnosing…</div>
+          <div class="result-title" id="result-title">
+            <div class="skeleton-dk sk-title mb8" style="width:75%"></div>
+          </div>
+          <div class="result-body" id="result-body">
+            <div class="skeleton-dk sk-line w80 mb8"></div>
+            <div class="skeleton-dk sk-line mb8"></div>
+            <div class="skeleton-dk sk-line w60 mb0"></div>
+          </div>
+          <button class="btn-sky" id="order-btn" style="display:none">Shop Tonics →</button>
+        </div>
+        <div class="card">
+          <div class="card-label">What to do</div>
+          <div class="card-sub" id="result-action">
+            <div class="skeleton sk-line w80 mb8"></div>
+            <div class="skeleton sk-line w60 mb0"></div>
+          </div>
+        </div>
+        <div class="ai-badge">Powered by Claude</div>
+        <button class="btn-outline" onclick="resetDiag()">← Run another diagnosis</button>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+<script>
+(function() {
+  var STORAGE_KEY = 'dbg_ak';
+  var _history = [];
+  var _currentOptions = [];
+
+  var STATIC_CATEGORIES = [
+    { icon: '🌿', label: 'Yellowing leaves',       description: 'Leaves turning pale, yellow, or losing colour' },
+    { icon: '🥀', label: 'Wilting or drooping',    description: 'Plant has lost structure or looks limp' },
+    { icon: '🍂', label: 'Brown spots or edges',   description: 'Leaf tips, edges, or patches turning brown' },
+    { icon: '🌱', label: 'Slow or stunted growth', description: 'Not growing or developing as expected' },
+    { icon: '🐛', label: 'Pests or bugs',          description: 'Visible insects, sticky residue, or chew damage' },
+    { icon: '💧', label: 'Root or soil concerns',  description: 'Overwatering, drainage, or root rot suspected' },
+  ];
+
+  function getApiKey() { return sessionStorage.getItem(STORAGE_KEY) || ''; }
+
+  function _updateKeyStatus() {
+    var key = getApiKey();
+    document.getElementById('key-dot').className = 'key-dot' + (key ? '' : ' off');
+    document.getElementById('key-hint').textContent = key
+      ? 'API key: ' + key.slice(0, 18) + '…'
+      : 'No API key — enter one below';
+  }
+
+  function saveApiKey() {
+    var val = (document.getElementById('api-key-input').value || '').trim();
+    if (!val) return;
+    sessionStorage.setItem(STORAGE_KEY, val);
+    document.getElementById('api-key-panel').style.display = 'none';
+    _updateKeyStatus();
+    askNext();
+  }
+
+  function clearKey() {
+    sessionStorage.removeItem(STORAGE_KEY);
+    _updateKeyStatus();
+    resetDiag();
+    document.getElementById('api-key-panel').style.display = 'block';
+  }
+
+  function _ensureApiKey() {
+    if (getApiKey()) return true;
+    document.getElementById('api-key-panel').style.display = 'block';
+    document.getElementById('diag-content').scrollTop = 0;
+    return false;
+  }
+
+  var SYSTEM = 'You are a plant health diagnostic assistant for Dropbear Slurry, makers of K-666 and K-333 Plant Tonics'
+    + ' — balanced NPK liquid fertilisers with micronutrients, pH 6.5–6.8, for vegetables, herbs, ornamentals, and sensitive plants.'
+    + ' K-666 is the full-strength formula for established plants and heavy feeders.'
+    + ' K-333 is the gentler formula (lower potassium silicate) for cuttings, seedlings, and sensitive species.'
+    + ' Ask as many follow-up questions as needed to reach a confident diagnosis — no fixed limit.'
+    + ' When you have enough information, return a diagnosis instead of another question.'
+    + ' CRITICAL: output raw JSON only. No markdown. No code fences. No backticks. No extra text before or after. Start your response with { and end with }.';
+
+  async function _callClaude(userPrompt) {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': getApiKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        system: SYSTEM,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+    if (!resp.ok) {
+      var err = await resp.json().catch(function() { return {}; });
+      throw new Error((err.error && err.error.message) || 'API error ' + resp.status);
+    }
+    var data = await resp.json();
+    var text = data.content[0].text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+    return JSON.parse(text);
+  }
+
+  function _skeletons(n) {
+    var h = '';
+    for (var i = 0; i < n; i++) h += '<div class="skeleton sk-option"></div>';
+    return h;
+  }
+
+  function _renderOptions(options, onClickName) {
+    return options.map(function(opt, i) {
+      return '<button class="diag-option fade-in" onclick="' + onClickName + '(' + i + ')">'
+        + '<div class="opt-icon">' + opt.icon + '</div>'
+        + '<div><div class="opt-text-label">' + opt.label + '</div>'
+        + '<div class="opt-text-desc">' + opt.description + '</div></div>'
+        + '</button>';
+    }).join('');
+  }
+
+  function _showError(container, msg) {
+    container.innerHTML = '<div class="diag-error">' + msg + '</div>'
+      + '<button class="btn-outline" onclick="resetDiag()">← Start over</button>';
+  }
+
+  function _setLoading() {
+    document.getElementById('diag-question').innerHTML =
+      '<div class="skeleton sk-title mb8" style="width:85%"></div>';
+    document.getElementById('diag-sub').innerHTML =
+      '<div class="skeleton sk-line w80 mb8"></div>';
+    document.getElementById('options-container').innerHTML = _skeletons(3);
+  }
+
+  function _updateTrail() {
+    var trail = document.getElementById('answer-trail');
+    if (_history.length === 0) { trail.style.display = 'none'; trail.innerHTML = ''; return; }
+    trail.style.display = 'flex';
+    trail.innerHTML = _history.map(function(h) {
+      return '<span class="trail-chip">' + h.answer + '</span>';
+    }).join('');
+  }
+
+  function _showStaticCategories() {
+    document.getElementById('question-panel').style.display = 'block';
+    document.getElementById('result-panel').style.display   = 'none';
+    document.getElementById('back-btn').style.display       = 'none';
+    document.getElementById('ai-badge').style.display       = 'none';
+    document.getElementById('diag-content').scrollTop       = 0;
+    _currentOptions = STATIC_CATEGORIES;
+    document.getElementById('diag-question').textContent = "What's your main concern?";
+    document.getElementById('diag-sub').textContent      = "Select the symptom that best describes what you're seeing.";
+    document.getElementById('options-container').innerHTML =
+      _renderOptions(STATIC_CATEGORIES, 'onOptionSelect');
+  }
+
+  async function askNext() {
+    if (!_ensureApiKey()) return;
+    document.getElementById('question-panel').style.display = 'block';
+    document.getElementById('result-panel').style.display   = 'none';
+    document.getElementById('back-btn').style.display       = 'block';
+    document.getElementById('ai-badge').style.display       = 'block';
+    document.getElementById('diag-content').scrollTop       = 0;
+    _setLoading();
+
+    var historyLines = _history.map(function(h, i) {
+      return 'Q' + (i + 1) + ': ' + h.question + '\nA' + (i + 1) + ': ' + h.answer;
+    }).join('\n\n');
+
+    var MAX_STEPS = 10;
+    var forceResult = _history.length >= MAX_STEPS;
+
+    var prompt = 'Diagnostic history so far:\n' + historyLines + '\n\n'
+      + (forceResult
+          ? 'You have reached the maximum number of questions. You MUST now return a diagnosis — do NOT ask another question.\n\n'
+          : 'Based on this, either ask one more targeted follow-up question OR provide a diagnosis if you have enough information.\n\n'
+            + 'If asking a follow-up, return:\n'
+            + '{ "type": "question", "question": "...", "sub": "...", "options": [ { "icon": "emoji", "label": "...", "description": "..." } ] }\n'
+            + 'Return 2-5 options as needed — use exactly as many as are genuinely distinct and useful.\n\n')
+      + 'If ready to diagnose, return:\n'
+      + '{ "type": "result", "label": "Diagnosis category", "title": "Specific diagnosis name", "body": "2-3 sentence explanation. If a fertiliser is relevant, recommend K-666 for established plants or K-333 for seedlings/cuttings/sensitive species.", "action": "2-3 concrete steps. Include the appropriate tonic (K-666 or K-333) and application rate if helpful." }';
+
+    try {
+      var parsed = await _callClaude(prompt);
+      if (parsed.type === 'result') { _showResult(parsed); return; }
+      _currentOptions = parsed.options;
+      document.getElementById('diag-question').textContent = parsed.question;
+      document.getElementById('diag-sub').textContent      = parsed.sub;
+      document.getElementById('options-container').innerHTML =
+        _renderOptions(parsed.options, 'onOptionSelect');
+    } catch (e) {
+      document.getElementById('diag-question').textContent = 'Something went wrong';
+      document.getElementById('diag-sub').textContent = '';
+      _showError(document.getElementById('options-container'), e.message);
+    }
+  }
+
+  function onOptionSelect(i) {
+    var label = (_currentOptions[i] || {}).label || String(i);
+    var question = document.getElementById('diag-question').textContent;
+    _history.push({ question: question, answer: label });
+    _updateTrail();
+    askNext();
+  }
+
+  function _showResult(parsed) {
+    document.getElementById('question-panel').style.display = 'none';
+    document.getElementById('result-panel').style.display   = 'block';
+    document.getElementById('diag-content').scrollTop = 0;
+    document.getElementById('result-label').textContent  = parsed.label;
+    document.getElementById('result-title').textContent  = parsed.title;
+    document.getElementById('result-body').textContent   = parsed.body;
+    document.getElementById('result-action').textContent = parsed.action;
+    document.getElementById('order-btn').style.display = 'block';
+  }
+
+  function goBack() {
+    if (_history.length === 0) return;
+    _history.pop();
+    _updateTrail();
+    if (_history.length === 0) { _showStaticCategories(); } else { askNext(); }
+  }
+
+  function resetDiag() {
+    _history = []; _currentOptions = [];
+    _updateTrail(); _showStaticCategories();
+  }
+
+  // Seed API key from URL fragment: diagnose.html#key=sk-ant-...
+  (function seedKey() {
+    var hash = window.location.hash;
+    if (hash && hash.indexOf('#key=') === 0) {
+      var k = hash.slice(5);
+      if (k) sessionStorage.setItem(STORAGE_KEY, k);
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  })();
+
+  _updateKeyStatus();
+  _showStaticCategories();
+
+  window.onOptionSelect = onOptionSelect;
+  window.goBack         = goBack;
+  window.resetDiag      = resetDiag;
+  window.saveApiKey     = saveApiKey;
+  window.clearKey       = clearKey;
+})();
+</script>
+</body>
+</html>
