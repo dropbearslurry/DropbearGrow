@@ -219,19 +219,42 @@ async def create_account(
     return {"created": email, "username": username}
 
 
-# ── Auth: check email ────────────────────────────────────────────────────────
+# ── Auth: check email (auto-provisions valid domain addresses) ────────────────
 @app.post("/api/auth/check-email")
 async def check_email(email: str = Form(...)):
-    email    = email.lower().strip()
+    email = email.lower().strip()
+    if not email.endswith(f"@{ALLOWED_DOMAIN}"):
+        raise HTTPException(403, f"A @{ALLOWED_DOMAIN} email address is required")
+
     accounts = _load_accounts()
-    account  = accounts.get(email)
-    if not account:
-        raise HTTPException(404, "No account found for that address")
+
+    if email not in accounts:
+        # Auto-create account and send welcome email
+        initial_pw = _gen_initial_password()
+        username   = email.split("@")[0]
+        accounts[email] = {
+            "username":            username,
+            "password_hash":       pwd_ctx.hash(initial_pw),
+            "is_initial":          True,
+            "created_at":          _iso(),
+            "password_changed_at": _iso(),
+        }
+        _save_accounts(accounts)
+        try:
+            _send_welcome_email(email, username, initial_pw)
+        except Exception as e:
+            accounts.pop(email)
+            _save_accounts(accounts)
+            raise HTTPException(502, f"Failed to send welcome email: {e}")
+        return {"is_initial": True, "is_expired": False, "created": True}
+
+    account    = accounts[email]
     changed_at = datetime.fromisoformat(account["password_changed_at"])
     expired    = (datetime.now(timezone.utc) - changed_at).total_seconds() > PASSWORD_EXPIRY
     return {
         "is_initial": account.get("is_initial", False),
         "is_expired": expired,
+        "created":    False,
     }
 
 

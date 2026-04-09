@@ -653,7 +653,9 @@ async function doCheckEmail() {
 
     const note = document.getElementById('pw-context-note');
     if (data.is_initial) {
-      note.textContent = 'Check your email for the temporary password we sent when your account was created.';
+      note.textContent = data.created
+        ? 'Account created — check your email for your temporary password.'
+        : 'Check your email for the temporary password sent when your account was created.';
       note.style.color = 'var(--teal-lt)';
     } else if (data.is_expired) {
       note.textContent = 'Your password has expired. Enter it below — you\'ll be prompted to set a new one.';
