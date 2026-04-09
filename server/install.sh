@@ -117,13 +117,32 @@ cp "${INSTALL_DIR}/internal.html" "${INSTALL_DIR}/server/static/index.html"
 ok "Internal page ready (served at /)"
 
 # ── .env file ─────────────────────────────────────────────────────────────────
-step "Checking .env configuration"
+step "Configuring .env"
 ENV_FILE="${INSTALL_DIR}/server/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
-    cp "${INSTALL_DIR}/server/.env.example" "$ENV_FILE"
-    warn ".env created from example — edit ${ENV_FILE} before starting the service"
+    # Prompt for SMTP password (input hidden)
+    echo ""
+    echo -e "  Enter the SMTP password for ${CYN}admin@dropbearslurry.com.au${RST}:"
+    read -r -s -p "  SMTP_PASS: " _smtp_pass
+    echo ""
+
+    # Generate a random ADMIN_KEY
+    _admin_key=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+
+    cat > "$ENV_FILE" <<ENVEOF
+SMTP_HOST=mail.dropbearslurry.com.au
+SMTP_PORT=587
+SMTP_USER=admin@dropbearslurry.com.au
+SMTP_PASS=${_smtp_pass}
+SMTP_FROM=internal@dropbearslurry.com.au
+ADMIN_KEY=${_admin_key}
+ENVEOF
+
+    ok ".env written (SMTP_PASS set, ADMIN_KEY auto-generated)"
+    echo -e "  ${YLW}ADMIN_KEY:${RST} ${_admin_key}"
+    echo -e "  ${YLW}Save the ADMIN_KEY above — you'll need it to create accounts.${RST}"
 else
-    ok ".env already exists"
+    ok ".env already exists — skipping credential prompt"
 fi
 
 # ── Permissions ───────────────────────────────────────────────────────────────
@@ -205,14 +224,11 @@ echo -e "  ╚══════════════════════
 echo ""
 echo "  Next steps:"
 echo ""
-echo -e "  1. Edit your config:  ${YLW}nano ${ENV_FILE}${RST}"
-echo "     (set SMTP_PASS and ADMIN_KEY)"
-echo ""
-echo -e "  2. Start the server:  ${YLW}systemctl start ${SERVICE_NAME}${RST}"
+echo -e "  1. Start the server:  ${YLW}systemctl start ${SERVICE_NAME}${RST}"
 echo -e "     Check status:      ${YLW}systemctl status ${SERVICE_NAME}${RST}"
 echo -e "     Live logs:         ${YLW}journalctl -fu ${SERVICE_NAME}${RST}"
 echo ""
-echo "  3. For TLS — choose one:"
+echo "  2. For TLS — choose one:"
 echo ""
 echo -e "     A) Own domain:     ${YLW}certbot --nginx -d yourdomain.com.au${RST}"
 echo ""
