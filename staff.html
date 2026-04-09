@@ -485,15 +485,13 @@ function userColor(u) {
 // Seed the message list with preview content so the layout is visible
 (function seedPreview() {
   const msgs = [
-    { type:'system', user:'',      text:'preview session started — no server connected', ts:'00:00:00' },
-    { type:'chat',   user:'jon',   text:'Morning! Invoice from Acme arrived, uploading now.', ts:'09:12:34' },
-    { type:'chat',   user:'sarah', text:'Cheers, I\'ll grab it from the repo.', ts:'09:13:01' },
-    { type:'chat',   user:'jon',   text:'Also check the new label assets in marketing/', ts:'09:13:45' },
-    { type:'system', user:'',      text:'sarah uploaded "label_v3_final.ai" → marketing (2.4 MB)', ts:'09:14:10' },
-    { type:'chat',   user:'preview', text:'this is you — connect to the server to go live', ts:'09:14:55' },
+    { type:'chat',   user:'jon',  text:'test message', ts:'09:12:34' },
+    { type:'chat',   user:'jed',  text:'test message', ts:'09:13:01' },
+    { type:'chat',   user:'elle', text:'test message', ts:'09:13:45' },
+    { type:'chat',   user:'preview', text:'test message', ts:'09:14:55' },
   ];
   msgs.forEach(appendMessage);
-  renderUserList(['jon', 'sarah', 'preview']);
+  renderUserList(['jon', 'jed', 'elle', 'preview']);
   buildCategoryUI();
 })();
 
