@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dropbear Slurry — Staff Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0b1a1c;
+  --bg2:        #102224;
+  --bg3:        #152b2e;
+  --border:     #2A464A;
+  --border2:    #3C6267;
+  --teal:       #3C6267;
+  --teal-lt:    #D4E8EA;
+  --cream:      #F5F0E8;
+  --alert:      #C45A2A;
+  --green:      #7A9B2E;
+  --red:        #b83a2a;
+  --text:       #8fb8be;
+  --text-dim:   #4a6a70;
+  --text-bright:#D4E8EA;
+  --mono:       'IBM Plex Mono', monospace;
+  --display:    'Shrikhand', serif;
+  --body:       'IBM Plex Sans', sans-serif;
+  --radius:     2px;
+  --sidebar-w:  260px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 56px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 32px; gap: 20px;
+}
+.site-header::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,transparent,var(--border2) 30%,var(--border2) 70%,transparent);
+  opacity: 0.6;
+}
+.header-logo {
+  display: flex; align-items: center; gap: 12px; text-decoration: none;
+}
+.header-logo img { height: 30px; width: 30px; object-fit: contain; }
+.header-logo-name {
+  font-family: var(--display); font-size: 18px;
+  letter-spacing: 0.04em; color: var(--teal-lt);
+  text-shadow: 0 0 20px rgba(212,232,234,0.2);
+}
+.header-divider { width: 1px; height: 20px; background: var(--border2); }
+.header-title {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.header-back {
+  margin-left: auto;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  color: var(--teal); text-decoration: none; border: 1px solid var(--border2);
+  padding: 4px 12px; border-radius: var(--radius); transition: all 0.15s;
+}
+.header-back:hover { background: var(--bg3); color: var(--teal-lt); }
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  padding-top: 56px;
+  min-height: 100%;
+}
+
+/* ── Sidebar nav ─────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  position: fixed; top: 56px; bottom: 0; left: 0;
+  background: var(--bg2); border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 24px 0;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.nav-section-title {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--teal);
+  padding: 16px 24px 6px; margin-top: 8px;
+}
+.nav-section-title:first-child { margin-top: 0; }
+
+.nav-link {
+  display: block; padding: 6px 24px;
+  font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+  text-decoration: none; transition: all 0.12s; border-left: 2px solid transparent;
+  letter-spacing: 0.04em;
+}
+.nav-link:hover { color: var(--text); background: var(--bg3); }
+.nav-link.active { color: var(--teal-lt); border-left-color: var(--teal); background: rgba(60,98,103,0.12); }
+
+/* ── Content ─────────────────────────────────────────────────────────── */
+.content {
+  margin-left: var(--sidebar-w);
+  flex: 1; max-width: 780px;
+  padding: 56px 64px 96px;
+}
+
+/* ── Typography ──────────────────────────────────────────────────────── */
+.handbook-title {
+  font-family: var(--display); font-size: 36px;
+  color: var(--teal-lt); letter-spacing: 0.03em;
+  margin-bottom: 6px;
+  text-shadow: 0 0 40px rgba(212,232,234,0.15);
+}
+.handbook-subtitle {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 48px;
+}
+
+.section {
+  margin-bottom: 64px; scroll-margin-top: 80px;
+}
+
+.section-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.3em;
+  text-transform: uppercase; color: var(--teal); margin-bottom: 8px;
+}
+
+h2 {
+  font-family: var(--body); font-size: 22px; font-weight: 500;
+  color: var(--text-bright); margin-bottom: 20px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+
+h3 {
+  font-family: var(--body); font-size: 16px; font-weight: 500;
+  color: var(--text-bright); margin: 28px 0 10px;
+}
+
+p {
+  color: var(--text); margin-bottom: 14px;
+  max-width: 640px;
+}
+
+ul, ol {
+  padding-left: 20px; margin-bottom: 14px; max-width: 640px;
+}
+li {
+  color: var(--text); margin-bottom: 6px;
+}
+
+.placeholder {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-dim); font-style: italic;
+  background: var(--bg3); border-left: 2px solid var(--border2);
+  padding: 12px 16px; border-radius: var(--radius);
+  margin-bottom: 14px; max-width: 640px;
+}
+
+.callout {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-left: 3px solid var(--teal);
+  padding: 16px 20px; border-radius: var(--radius);
+  margin-bottom: 20px; max-width: 640px;
+}
+.callout.warn { border-left-color: var(--alert); }
+.callout p { margin: 0; font-size: 14px; }
+
+.divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 48px 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .content { margin-left: 0; padding: 32px 24px 64px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="header-logo" href="staff.html">
+    <img src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="Dropbear Slurry" />
+    <span class="header-logo-name">Dropbear Slurry</span>
+  </a>
+  <div class="header-divider"></div>
+  <span class="header-title">Staff Handbook</span>
+  <a class="header-back" href="staff.html">← Back to portal</a>
+</header>
+
+<div class="layout">
+
+  <nav class="sidebar">
+    <div class="nav-section-title">Getting started</div>
+    <a class="nav-link active" href="#welcome">Welcome</a>
+    <a class="nav-link" href="#about">About us</a>
+    <a class="nav-link" href="#values">Our values</a>
+
+    <div class="nav-section-title">Working here</div>
+    <a class="nav-link" href="#hours">Hours &amp; location</a>
+    <a class="nav-link" href="#leave">Leave &amp; time off</a>
+    <a class="nav-link" href="#pay">Pay &amp; expenses</a>
+
+    <div class="nav-section-title">Policies</div>
+    <a class="nav-link" href="#conduct">Code of conduct</a>
+    <a class="nav-link" href="#safety">Health &amp; safety</a>
+    <a class="nav-link" href="#comms">Communications</a>
+
+    <div class="nav-section-title">Resources</div>
+    <a class="nav-link" href="#contacts">Key contacts</a>
+    <a class="nav-link" href="#tools">Tools &amp; systems</a>
+  </nav>
+
+  <main class="content">
+    <div class="handbook-title">Staff Handbook</div>
+    <div class="handbook-subtitle">Last updated — <span id="last-updated"></span> &nbsp;·&nbsp; Version 0.1 (draft)</div>
+
+    <!-- Welcome -->
+    <section class="section" id="welcome">
+      <div class="section-label">Getting started</div>
+      <h2>Welcome</h2>
+      <p>Welcome to the Dropbear Slurry team. This handbook covers everything you need to know about working with us — from day-to-day practicalities to policies and expectations.</p>
+      <p>If something isn't covered here or you're not sure about anything, reach out to a team lead directly.</p>
+      <div class="callout">
+        <p>This handbook is a living document. Policies will be updated as the business grows — check the version number and date at the top of the page.</p>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- About -->
+    <section class="section" id="about">
+      <div class="section-label">Getting started</div>
+      <h2>About us</h2>
+      <div class="placeholder">[ About the business — what we do, where we operate, how long we've been going. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Values -->
+    <section class="section" id="values">
+      <div class="section-label">Getting started</div>
+      <h2>Our values</h2>
+      <div class="placeholder">[ Core values and what they mean in practice day to day. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Hours -->
+    <section class="section" id="hours">
+      <div class="section-label">Working here</div>
+      <h2>Hours &amp; location</h2>
+      <div class="placeholder">[ Trading hours, shift patterns, site address(es), remote work policy if any. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Leave -->
+    <section class="section" id="leave">
+      <div class="section-label">Working here</div>
+      <h2>Leave &amp; time off</h2>
+      <h3>Annual leave</h3>
+      <div class="placeholder">[ Entitlement, how to request leave, notice required. ]</div>
+      <h3>Sick leave</h3>
+      <div class="placeholder">[ Entitlement, how to notify the team when you're unwell. ]</div>
+      <h3>Public holidays</h3>
+      <div class="placeholder">[ Which holidays are observed, any penalty rates or alternate arrangements. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Pay -->
+    <section class="section" id="pay">
+      <div class="section-label">Working here</div>
+      <h2>Pay &amp; expenses</h2>
+      <h3>Pay cycle</h3>
+      <div class="placeholder">[ When pay is processed, how payslips are delivered. ]</div>
+      <h3>Expenses</h3>
+      <div class="placeholder">[ What can be claimed, how to submit receipts, approval process. Upload receipts to the Shared Files → Receipts folder. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Conduct -->
+    <section class="section" id="conduct">
+      <div class="section-label">Policies</div>
+      <h2>Code of conduct</h2>
+      <div class="placeholder">[ Expected behaviour, how we treat each other, customers, and suppliers. Grievance process. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Safety -->
+    <section class="section" id="safety">
+      <div class="section-label">Policies</div>
+      <h2>Health &amp; safety</h2>
+      <div class="callout warn">
+        <p>All staff are required to complete the site induction before commencing work.</p>
+      </div>
+      <div class="placeholder">[ Site-specific hazards, PPE requirements, incident reporting, emergency procedures, first aid contacts. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Comms -->
+    <section class="section" id="comms">
+      <div class="section-label">Policies</div>
+      <h2>Communications</h2>
+      <div class="placeholder">[ How we communicate internally (this portal), social media policy, external communications, confidentiality. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Contacts -->
+    <section class="section" id="contacts">
+      <div class="section-label">Resources</div>
+      <h2>Key contacts</h2>
+      <div class="placeholder">[ Names, roles, and contact details for team leads, payroll, HR, emergency contacts. ]</div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Tools -->
+    <section class="section" id="tools">
+      <div class="section-label">Resources</div>
+      <h2>Tools &amp; systems</h2>
+      <ul>
+        <li><strong>Team portal</strong> — chat and shared files at this address</li>
+        <li><strong>Email</strong> — <span style="font-family:var(--mono);font-size:13px;">yourname@dropbearslurry.com.au</span></li>
+      </ul>
+      <div class="placeholder">[ Any other software, equipment, or systems staff need access to. ]</div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// Set last updated date
+document.getElementById('last-updated').textContent =
+  new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('.section');
+const navLinks  = document.querySelectorAll('.nav-link');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
