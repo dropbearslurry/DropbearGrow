@@ -139,7 +139,7 @@ body::after {
 .chat-sidebar {
   width: 200px; flex-shrink: 0;
   background: var(--bg2); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: column; overflow: hidden;
 }
 .sidebar-section { padding: 16px 16px 8px; }
 .sidebar-title {
@@ -232,51 +232,38 @@ body::after {
 }
 .send-btn:hover { border-color:var(--teal-lt); color:var(--teal-lt); }
 
-/* ── Email Sidebar ──────────────────────────────────────────────────── */
-.email-sidebar {
-  width: 240px; flex-shrink: 0;
-  background: var(--bg2); border-left: 1px solid var(--border);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.email-sidebar-header {
-  padding: 10px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+/* ── Email (in left sidebar, below online users) ────────────────────── */
+.email-section {
+  border-top: 1px solid var(--border); margin-top: 8px; overflow: hidden;
+  display: flex; flex-direction: column; min-height: 0; flex: 1;
 }
 .email-account-label {
   font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em;
   text-transform: uppercase; color: var(--teal);
-  padding: 10px 16px 4px; border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  padding: 8px 16px 3px; flex-shrink: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .email-feed {
-  list-style: none; overflow-y: auto; flex-shrink: 0;
+  list-style: none; overflow-y: auto;
 }
 .email-feed::-webkit-scrollbar { width: 3px; }
 .email-feed::-webkit-scrollbar-thumb { background: var(--border2); }
 .email-item {
-  padding: 8px 16px 8px 22px; border-bottom: 1px solid var(--border);
+  padding: 5px 12px 5px 20px; border-bottom: 1px solid var(--border);
   cursor: default; transition: background 0.1s; position: relative;
-  display: grid; grid-template-areas: "from date" "subject subject";
-  grid-template-columns: 1fr auto; gap: 2px 8px;
 }
 .email-item:hover { background: var(--bg3); }
-.email-item.unread .email-from,
-.email-item.unread .email-subject { color: var(--text-bright); }
-.email-item.unread::before {
+.email-item::before {
   content: ''; display: block; width: 5px; height: 5px;
   background: var(--teal); border-radius: 50%;
-  position: absolute; margin-left: -10px; margin-top: 5px;
+  position: absolute; left: 8px; top: 9px;
 }
 .email-from {
-  grid-area: from; font-family: var(--mono); font-size: 11px;
-  color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.email-date {
-  grid-area: date; font-family: var(--mono); font-size: 10px;
-  color: var(--text-dim); white-space: nowrap; flex-shrink: 0;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-bright); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .email-subject {
-  grid-area: subject; font-family: var(--body); font-size: 11px;
+  font-family: var(--body); font-size: 10px;
   color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -726,6 +713,31 @@ body::after {
             <div class="sidebar-title">Online</div>
             <ul id="user-list"></ul>
           </div>
+          <div class="email-section">
+            <div class="sidebar-title" style="padding:8px 16px 4px;margin:0;border-bottom:none;">Unread</div>
+            <div class="email-account-label">admin@</div>
+            <ul class="email-feed">
+              <li class="email-item">
+                <div class="email-from">Afterpay</div>
+                <div class="email-subject">Activate account for Afterpay</div>
+              </li>
+              <li class="email-item">
+                <div class="email-from">BOC Australia</div>
+                <div class="email-subject">Welcome to BOC Online!</div>
+              </li>
+            </ul>
+            <div class="email-account-label">jon@</div>
+            <ul class="email-feed">
+              <li class="email-item">
+                <div class="email-from">Anthropic</div>
+                <div class="email-subject">[action needed] Claude API access off</div>
+              </li>
+              <li class="email-item">
+                <div class="email-from">Square</div>
+                <div class="email-subject">Your transfer has been sent</div>
+              </li>
+            </ul>
+          </div>
         </div>
         <div class="chat-main">
           <div class="chat-status-strip">
@@ -744,72 +756,6 @@ body::after {
             <input id="chat-input" type="text" maxlength="2000" placeholder="type a message…" autocomplete="off" spellcheck="false" disabled />
             <button class="send-btn" id="send-btn">SEND ↵</button>
           </div>
-        <!-- Email sidebar -->
-        <div class="email-sidebar">
-          <div class="email-sidebar-header">
-            <span class="sidebar-title">inbox</span>
-          </div>
-
-          <!-- admin@ feed -->
-          <div class="email-account-label">admin@dropbearslurry.com.au</div>
-          <ul class="email-feed">
-            <li class="email-item unread">
-              <div class="email-from">Afterpay Merchant Support</div>
-              <div class="email-subject">Activate account for Afterpay</div>
-              <div class="email-date">7 Apr</div>
-            </li>
-            <li class="email-item unread">
-              <div class="email-from">BOC Australia</div>
-              <div class="email-subject">Welcome to BOC Online!</div>
-              <div class="email-date">7 Apr</div>
-            </li>
-            <li class="email-item">
-              <div class="email-from">Square</div>
-              <div class="email-subject">Your trial ends soon</div>
-              <div class="email-date">30 Mar</div>
-            </li>
-            <li class="email-item">
-              <div class="email-from">CouriersPlease</div>
-              <div class="email-subject">Invoice #FE000043328</div>
-              <div class="email-date">10 Mar</div>
-            </li>
-            <li class="email-item">
-              <div class="email-from">Reddit Ads</div>
-              <div class="email-subject">Re: Partnership Opportunity</div>
-              <div class="email-date">10 Mar</div>
-            </li>
-          </ul>
-
-          <!-- jon@ feed -->
-          <div class="email-account-label">jon@dropbearslurry.com.au</div>
-          <ul class="email-feed">
-            <li class="email-item unread">
-              <div class="email-from">Anthropic</div>
-              <div class="email-subject">[action needed] Claude API access off</div>
-              <div class="email-date">18 Mar</div>
-            </li>
-            <li class="email-item unread">
-              <div class="email-from">Square</div>
-              <div class="email-subject">Your transfer has been sent</div>
-              <div class="email-date">18 Mar</div>
-            </li>
-            <li class="email-item">
-              <div class="email-from">CouriersPlease</div>
-              <div class="email-subject">We have delivered your parcel</div>
-              <div class="email-date">13 Mar</div>
-            </li>
-            <li class="email-item">
-              <div class="email-from">CouriersPlease</div>
-              <div class="email-subject">Your parcel is on its way</div>
-              <div class="email-date">13 Mar</div>
-            </li>
-            <li class="email-item">
-              <div class="email-from">Squarespace</div>
-              <div class="email-subject">Verify Your Account</div>
-              <div class="email-date">16 Mar</div>
-            </li>
-          </ul>
-        </div>
 
       </div>
     </div>
