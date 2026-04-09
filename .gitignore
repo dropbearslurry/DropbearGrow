@@ -2,4 +2,5 @@ server/.venv/
 server/__pycache__/
 server/uploads/
 server/.env
+server/accounts.json
 *.pyc

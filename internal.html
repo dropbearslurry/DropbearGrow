@@ -76,16 +76,14 @@ body::after {
 }
 
 .login-logo {
-  font-family: var(--display); font-size: 38px;
-  letter-spacing: 0.04em; color: var(--teal-lt);
-  text-shadow: 0 0 40px rgba(212,232,234,0.25);
-  text-align: center; margin-bottom: 4px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; margin-bottom: 32px;
 }
-
-.login-sub {
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.3em;
-  color: var(--text-dim); text-align: center; margin-bottom: 32px;
-  text-transform: uppercase;
+.login-logo img { width: 56px; height: 56px; object-fit: contain; }
+.login-logo-name {
+  font-family: var(--display); font-size: 28px;
+  letter-spacing: 0.04em; color: var(--teal-lt);
+  text-shadow: 0 0 30px rgba(212,232,234,0.2);
 }
 
 .login-label {
@@ -125,6 +123,21 @@ body::after {
 
 .login-step { display: none; }
 .login-step.active { display: block; }
+
+.pw-rules {
+  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  margin-top: 8px; line-height: 1.8; padding: 8px 10px;
+  background: var(--bg3); border-left: 2px solid var(--border2);
+}
+.pw-rules .rule { display: flex; align-items: center; gap: 6px; transition: color 0.15s; }
+.pw-rules .rule.ok { color: var(--green); }
+.pw-rules .rule::before { content: '○'; font-size: 9px; }
+.pw-rules .rule.ok::before { content: '●'; }
+
+.pw-expiry-note {
+  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  margin-top: 10px; text-align: center;
+}
 
 .login-btn {
   width: 100%; margin-top: 24px; padding: 11px;
@@ -426,33 +439,44 @@ body::after {
 <!-- Login -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">Dropbear Slurry</div>
-    <div class="login-sub">team · secure · internal</div>
+    <div class="login-logo">
+      <img src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="Dropbear Slurry" />
+      <span class="login-logo-name">Dropbear Slurry</span>
+    </div>
 
-    <!-- Step 1: email + server -->
-    <div class="login-step active" id="step-email">
-      <label class="login-label" for="email-input">email address</label>
+    <!-- Step 1: login -->
+    <div class="login-step active" id="step-login">
+      <label class="login-label" for="email-input">email</label>
       <input class="login-input" id="email-input" type="email"
         placeholder="you@dropbearslurry.com.au" autocomplete="email" spellcheck="false" />
+      <label class="login-label" for="password-input">password</label>
+      <input class="login-input" id="password-input" type="password"
+        placeholder="••••••••" autocomplete="current-password" />
       <label class="login-label" for="server-input">server</label>
       <input class="login-input" id="server-input" type="text"
         placeholder="ws://your-server:7331" autocomplete="off" spellcheck="false" />
-      <div class="login-error" id="step1-error"></div>
-      <button class="login-btn" id="send-otp-btn">SEND CODE</button>
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn" id="login-btn">SIGN IN</button>
     </div>
 
-    <!-- Step 2: OTP -->
-    <div class="login-step" id="step-otp">
-      <div class="login-hint" style="margin-bottom:20px;text-align:left;">
-        Code sent to <span id="otp-email-display" style="color:var(--teal-lt)"></span>
+    <!-- Step 2: set new password (initial or expired) -->
+    <div class="login-step" id="step-set-password">
+      <div class="pw-expiry-note" id="pw-reason-note"></div>
+      <label class="login-label" for="new-password-input">new password</label>
+      <input class="login-input" id="new-password-input" type="password"
+        placeholder="••••••••" autocomplete="new-password" />
+      <label class="login-label" for="confirm-password-input">confirm password</label>
+      <input class="login-input" id="confirm-password-input" type="password"
+        placeholder="••••••••" autocomplete="new-password" />
+      <div class="pw-rules" id="pw-rules">
+        <div class="rule" id="rule-len">At least 8 characters</div>
+        <div class="rule" id="rule-upper">Uppercase letter</div>
+        <div class="rule" id="rule-lower">Lowercase letter</div>
+        <div class="rule" id="rule-digit">Number</div>
+        <div class="rule" id="rule-special">Special character</div>
       </div>
-      <label class="login-label" for="otp-input">access code</label>
-      <input class="login-input" id="otp-input" type="text" maxlength="6"
-        placeholder="000000" autocomplete="one-time-code" spellcheck="false"
-        style="letter-spacing:0.3em;font-size:22px;text-align:center;" />
-      <div class="login-error" id="step2-error"></div>
-      <button class="login-btn" id="verify-otp-btn">VERIFY</button>
-      <div class="login-hint"><a id="back-btn">← use a different address</a></div>
+      <div class="login-error" id="setpw-error"></div>
+      <button class="login-btn" id="set-pw-btn">SET PASSWORD</button>
     </div>
   </div>
 </div>
@@ -582,89 +606,124 @@ function userColor(u) {
 const _savedServer = localStorage.getItem('db_server');
 if (_savedServer) document.getElementById('server-input').value = _savedServer;
 
-// ── Login — step 1: send OTP ──────────────────────────────────────────
-document.getElementById('send-otp-btn').addEventListener('click', doSendOtp);
-document.getElementById('email-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSendOtp(); });
-document.getElementById('server-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSendOtp(); });
+// ── Login — step 1: sign in ───────────────────────────────────────────
+let _changeToken = '';
 
-async function doSendOtp() {
-  const email = document.getElementById('email-input').value.trim().toLowerCase();
-  const sv    = document.getElementById('server-input').value.trim();
-  const errEl = document.getElementById('step1-error');
+document.getElementById('login-btn').addEventListener('click', doLogin);
+['email-input', 'password-input', 'server-input'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); })
+);
+
+async function doLogin() {
+  const email  = document.getElementById('email-input').value.trim().toLowerCase();
+  const pw     = document.getElementById('password-input').value;
+  const sv     = document.getElementById('server-input').value.trim();
+  const errEl  = document.getElementById('login-error');
   errEl.classList.remove('visible');
 
-  if (!email) { document.getElementById('email-input').focus(); return; }
-  if (!sv)    { document.getElementById('server-input').focus(); return; }
+  if (!email || !pw || !sv) {
+    errEl.textContent = 'All fields are required';
+    errEl.classList.add('visible');
+    return;
+  }
 
   serverUrl = sv;
   const base = apiBase();
-  const btn  = document.getElementById('send-otp-btn');
-  btn.textContent = 'SENDING…';
+  const btn  = document.getElementById('login-btn');
+  btn.textContent = 'SIGNING IN…';
   btn.disabled    = true;
 
   try {
     const fd = new FormData();
     fd.append('email', email);
-    const res = await fetch(`${base}/api/auth/request-otp`, { method: 'POST', body: fd });
+    fd.append('password', pw);
+    const res  = await fetch(`${base}/api/auth/login`, { method: 'POST', body: fd });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
 
-    // Show OTP step
-    document.getElementById('otp-email-display').textContent = email;
-    document.getElementById('step-email').classList.remove('active');
-    document.getElementById('step-otp').classList.add('active');
-    document.getElementById('otp-input').focus();
+    if (data.require_password_change) {
+      _changeToken = data.change_token;
+      username     = data.username;
+      const note   = document.getElementById('pw-reason-note');
+      note.textContent = data.reason === 'initial'
+        ? 'Welcome. Please set a permanent password to continue.'
+        : 'Your password has expired. Please set a new one.';
+      document.getElementById('step-login').classList.remove('active');
+      document.getElementById('step-set-password').classList.add('active');
+      document.getElementById('new-password-input').focus();
+    } else {
+      sessionToken = data.token;
+      username     = data.username;
+      localStorage.setItem('db_server', serverUrl);
+      doEnterApp();
+    }
   } catch (err) {
     errEl.textContent = err.message;
     errEl.classList.add('visible');
+    document.getElementById('password-input').value = '';
   } finally {
-    btn.textContent = 'SEND CODE';
+    btn.textContent = 'SIGN IN';
     btn.disabled    = false;
   }
 }
 
-// ── Login — step 2: verify OTP ────────────────────────────────────────
-document.getElementById('verify-otp-btn').addEventListener('click', doVerifyOtp);
-document.getElementById('otp-input').addEventListener('keydown', e => { if (e.key === 'Enter') doVerifyOtp(); });
-document.getElementById('back-btn').addEventListener('click', () => {
-  document.getElementById('step-otp').classList.remove('active');
-  document.getElementById('step-email').classList.add('active');
-  document.getElementById('step2-error').classList.remove('visible');
-  document.getElementById('otp-input').value = '';
+// ── Login — step 2: set new password ─────────────────────────────────
+const PW_RULES = [
+  { id: 'rule-len',     test: pw => pw.length >= 8 },
+  { id: 'rule-upper',   test: pw => /[A-Z]/.test(pw) },
+  { id: 'rule-lower',   test: pw => /[a-z]/.test(pw) },
+  { id: 'rule-digit',   test: pw => /\d/.test(pw) },
+  { id: 'rule-special', test: pw => /[^A-Za-z0-9]/.test(pw) },
+];
+
+document.getElementById('new-password-input').addEventListener('input', () => {
+  const pw = document.getElementById('new-password-input').value;
+  PW_RULES.forEach(r => document.getElementById(r.id).classList.toggle('ok', r.test(pw)));
 });
 
-async function doVerifyOtp() {
-  const email  = document.getElementById('email-input').value.trim().toLowerCase();
-  const otp    = document.getElementById('otp-input').value.trim();
-  const errEl  = document.getElementById('step2-error');
-  const base   = apiBase();
+document.getElementById('set-pw-btn').addEventListener('click', doSetPassword);
+['new-password-input', 'confirm-password-input'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doSetPassword(); })
+);
+
+async function doSetPassword() {
+  const newPw  = document.getElementById('new-password-input').value;
+  const confPw = document.getElementById('confirm-password-input').value;
+  const errEl  = document.getElementById('setpw-error');
   errEl.classList.remove('visible');
 
-  if (!otp) { document.getElementById('otp-input').focus(); return; }
+  if (newPw !== confPw) {
+    errEl.textContent = 'Passwords do not match';
+    errEl.classList.add('visible');
+    return;
+  }
+  if (PW_RULES.some(r => !r.test(newPw))) {
+    errEl.textContent = 'Password does not meet the requirements above';
+    errEl.classList.add('visible');
+    return;
+  }
 
-  const btn = document.getElementById('verify-otp-btn');
-  btn.textContent = 'VERIFYING…';
+  const btn  = document.getElementById('set-pw-btn');
+  btn.textContent = 'SAVING…';
   btn.disabled    = true;
+  const base = apiBase();
 
   try {
     const fd = new FormData();
-    fd.append('email', email);
-    fd.append('otp',   otp);
-    const res  = await fetch(`${base}/api/auth/verify-otp`, { method: 'POST', body: fd });
+    fd.append('change_token', _changeToken);
+    fd.append('new_password', newPw);
+    const res  = await fetch(`${base}/api/auth/set-password`, { method: 'POST', body: fd });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
 
     sessionToken = data.token;
-    username     = data.username;
     localStorage.setItem('db_server', serverUrl);
     doEnterApp();
   } catch (err) {
     errEl.textContent = err.message;
     errEl.classList.add('visible');
-    document.getElementById('otp-input').value = '';
-    document.getElementById('otp-input').focus();
   } finally {
-    btn.textContent = 'VERIFY';
+    btn.textContent = 'SET PASSWORD';
     btn.disabled    = false;
   }
 }

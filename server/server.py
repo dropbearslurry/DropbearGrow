@@ -1,24 +1,27 @@
 """
 Dropbear Team Site — backend server
-FastAPI + WebSockets for chat, REST for file repo, OTP email auth
+FastAPI + WebSockets for chat, REST for file repo, account-based auth
 """
 
 import json
 import os
+import re
 import hashlib
 import secrets
 import smtplib
-from datetime import datetime, timezone
+import string
+from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from pathlib import Path
 
 from fastapi import (
     FastAPI, WebSocket, WebSocketDisconnect,
-    UploadFile, File, HTTPException, Form, Query
+    UploadFile, File, HTTPException, Form, Query, Header
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from passlib.context import CryptContext
 import uvicorn
 
 try:
@@ -28,19 +31,22 @@ except ImportError:
     pass
 
 # ── Config ─────────────────────────────────────────────────────────────────
-UPLOAD_DIR     = Path(__file__).parent / "uploads"
-STATIC_DIR     = Path(__file__).parent / "static"
+UPLOAD_DIR      = Path(__file__).parent / "uploads"
+STATIC_DIR      = Path(__file__).parent / "static"
+ACCOUNTS_FILE   = Path(__file__).parent / "accounts.json"
 MAX_CHAT_HISTORY = 200
 MAX_UPLOAD_MB    = 50
 ALLOWED_DOMAIN   = "dropbearslurry.com.au"
-OTP_TTL          = 600   # 10 minutes
-SESSION_TTL      = 86400 # 24 hours
+SESSION_TTL      = 90 * 24 * 3600   # 90 days
+PASSWORD_EXPIRY  = 90 * 24 * 3600   # 90 days
+CHANGE_TTL       = 900              # 15 min to complete a forced change
 
-SMTP_HOST = os.getenv("SMTP_HOST", "mail.dropbearslurry.com.au")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "admin@dropbearslurry.com.au")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "internal@dropbearslurry.com.au")
+SMTP_HOST  = os.getenv("SMTP_HOST",  "mail.dropbearslurry.com.au")
+SMTP_PORT  = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER  = os.getenv("SMTP_USER",  "admin@dropbearslurry.com.au")
+SMTP_PASS  = os.getenv("SMTP_PASS",  "")
+SMTP_FROM  = os.getenv("SMTP_FROM",  "internal@dropbearslurry.com.au")
+ADMIN_KEY  = os.getenv("ADMIN_KEY",  "")
 
 CATEGORIES = ["general", "receipts", "marketing", "production", "assets"]
 
@@ -48,8 +54,9 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 for _cat in CATEGORIES:
     (UPLOAD_DIR / _cat).mkdir(exist_ok=True)
 
-app = FastAPI(title="Dropbear", docs_url=None, redoc_url=None)
+pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+app = FastAPI(title="Dropbear", docs_url=None, redoc_url=None)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -57,32 +64,78 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Auth state ──────────────────────────────────────────────────────────────
-otp_store: dict[str, dict]     = {}  # email  → {otp, expires}
-session_store: dict[str, dict] = {}  # token  → {email, username, expires}
+
+# ── Account storage ─────────────────────────────────────────────────────────
+def _load_accounts() -> dict:
+    if ACCOUNTS_FILE.exists():
+        return json.loads(ACCOUNTS_FILE.read_text())
+    return {}
+
+
+def _save_accounts(accounts: dict):
+    ACCOUNTS_FILE.write_text(json.dumps(accounts, indent=2))
+
+
+# ── Auth state (in-memory) ───────────────────────────────────────────────────
+# token → {email, username, expires}
+session_store: dict[str, dict] = {}
+# change_token → {email, expires}
+change_store: dict[str, dict] = {}
 
 
 def _ts() -> float:
     return datetime.now(timezone.utc).timestamp()
 
 
+def _iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 def _valid_session(token: str) -> dict | None:
     entry = session_store.get(token)
-    if not entry:
-        return None
-    if _ts() > entry["expires"]:
+    if not entry or _ts() > entry["expires"]:
         session_store.pop(token, None)
         return None
     return entry
 
 
-def _require_token(token: str):
-    if not _valid_session(token):
+def _require_token(token: str) -> dict:
+    s = _valid_session(token)
+    if not s:
         raise HTTPException(401, "Valid session token required")
+    return s
 
 
-# ── Chat state ──────────────────────────────────────────────────────────────
-chat_history: list[dict]           = []
+# ── Password rules ───────────────────────────────────────────────────────────
+def _check_password(pw: str) -> str | None:
+    """Return error string or None if password is acceptable."""
+    if len(pw) < 8:
+        return "At least 8 characters required"
+    if not re.search(r"[A-Z]", pw):
+        return "Must contain an uppercase letter"
+    if not re.search(r"[a-z]", pw):
+        return "Must contain a lowercase letter"
+    if not re.search(r"\d", pw):
+        return "Must contain a number"
+    if not re.search(r"[^A-Za-z0-9]", pw):
+        return "Must contain a special character"
+    return None
+
+
+def _gen_initial_password() -> str:
+    """Generate a readable but secure temporary password."""
+    alpha  = string.ascii_letters
+    digits = string.digits
+    special = "!@#$%^&*"
+    pool = alpha + digits + special
+    while True:
+        pw = "".join(secrets.choice(pool) for _ in range(12))
+        if _check_password(pw) is None:
+            return pw
+
+
+# ── Chat state ───────────────────────────────────────────────────────────────
+chat_history: list[dict]              = []
 connected_users: dict[str, WebSocket] = {}
 
 
@@ -127,41 +180,77 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%H:%M:%S")
 
 
-# ── Auth endpoints ──────────────────────────────────────────────────────────
-@app.post("/api/auth/request-otp")
-async def request_otp(email: str = Form(...)):
+# ── Admin: create account ────────────────────────────────────────────────────
+@app.post("/api/admin/create-account")
+async def create_account(
+    email: str = Form(...),
+    x_admin_key: str = Header(default=""),
+):
+    if not ADMIN_KEY or x_admin_key != ADMIN_KEY:
+        raise HTTPException(403, "Invalid admin key")
+
     email = email.lower().strip()
     if not email.endswith(f"@{ALLOWED_DOMAIN}"):
-        raise HTTPException(403, f"A @{ALLOWED_DOMAIN} email address is required")
+        raise HTTPException(400, f"Must be a @{ALLOWED_DOMAIN} address")
 
-    otp = f"{secrets.randbelow(1000000):06d}"
-    otp_store[email] = {"otp": otp, "expires": _ts() + OTP_TTL}
+    accounts = _load_accounts()
+    if email in accounts:
+        raise HTTPException(409, "Account already exists")
+
+    initial_pw   = _gen_initial_password()
+    username     = email.split("@")[0]
+    accounts[email] = {
+        "username":            username,
+        "password_hash":       pwd_ctx.hash(initial_pw),
+        "is_initial":          True,
+        "created_at":          _iso(),
+        "password_changed_at": _iso(),
+    }
+    _save_accounts(accounts)
 
     try:
-        _send_otp_email(email, otp)
+        _send_welcome_email(email, username, initial_pw)
     except Exception as e:
-        otp_store.pop(email, None)
-        raise HTTPException(502, f"Failed to send email: {e}")
+        # Roll back so a retry is possible
+        accounts.pop(email)
+        _save_accounts(accounts)
+        raise HTTPException(502, f"Account created but email failed: {e}")
 
-    return {"sent": True}
+    return {"created": email, "username": username}
 
 
-@app.post("/api/auth/verify-otp")
-async def verify_otp(email: str = Form(...), otp: str = Form(...)):
-    email = email.lower().strip()
-    entry = otp_store.get(email)
+# ── Auth: login ──────────────────────────────────────────────────────────────
+@app.post("/api/auth/login")
+async def login(email: str = Form(...), password: str = Form(...)):
+    email    = email.lower().strip()
+    accounts = _load_accounts()
+    account  = accounts.get(email)
 
-    if not entry:
-        raise HTTPException(401, "No code was requested for this address")
-    if _ts() > entry["expires"]:
-        otp_store.pop(email, None)
-        raise HTTPException(401, "Code has expired — request a new one")
-    if entry["otp"] != otp.strip():
-        raise HTTPException(401, "Incorrect code")
+    if not account or not pwd_ctx.verify(password, account["password_hash"]):
+        raise HTTPException(401, "Incorrect email or password")
 
-    otp_store.pop(email)
-    token    = secrets.token_urlsafe(32)
-    username = email.split("@")[0]
+    username = account["username"]
+
+    # Check if password change is required (initial or expired)
+    changed_at = datetime.fromisoformat(account["password_changed_at"])
+    expired    = (datetime.now(timezone.utc) - changed_at).total_seconds() > PASSWORD_EXPIRY
+    need_change = account.get("is_initial", False) or expired
+
+    if need_change:
+        reason = "initial" if account.get("is_initial") else "expired"
+        change_token = secrets.token_urlsafe(32)
+        change_store[change_token] = {
+            "email":   email,
+            "expires": _ts() + CHANGE_TTL,
+        }
+        return {
+            "require_password_change": True,
+            "reason":                  reason,
+            "change_token":            change_token,
+            "username":                username,
+        }
+
+    token = secrets.token_urlsafe(32)
     session_store[token] = {
         "email":    email,
         "username": username,
@@ -170,7 +259,43 @@ async def verify_otp(email: str = Form(...), otp: str = Form(...)):
     return {"token": token, "username": username}
 
 
-# ── WebSocket endpoint ──────────────────────────────────────────────────────
+# ── Auth: set password ───────────────────────────────────────────────────────
+@app.post("/api/auth/set-password")
+async def set_password(
+    change_token: str = Form(...),
+    new_password: str = Form(...),
+):
+    entry = change_store.get(change_token)
+    if not entry or _ts() > entry["expires"]:
+        change_store.pop(change_token, None)
+        raise HTTPException(401, "Password change session expired — please log in again")
+
+    err = _check_password(new_password)
+    if err:
+        raise HTTPException(400, err)
+
+    email    = entry["email"]
+    accounts = _load_accounts()
+    if email not in accounts:
+        raise HTTPException(404, "Account not found")
+
+    accounts[email]["password_hash"]       = pwd_ctx.hash(new_password)
+    accounts[email]["is_initial"]          = False
+    accounts[email]["password_changed_at"] = _iso()
+    _save_accounts(accounts)
+    change_store.pop(change_token)
+
+    username = accounts[email]["username"]
+    token    = secrets.token_urlsafe(32)
+    session_store[token] = {
+        "email":    email,
+        "username": username,
+        "expires":  _ts() + SESSION_TTL,
+    }
+    return {"token": token, "username": username}
+
+
+# ── WebSocket ────────────────────────────────────────────────────────────────
 @app.websocket("/ws/{username}")
 async def chat_ws(websocket: WebSocket, username: str, token: str = Query(...)):
     session = _valid_session(token)
@@ -200,7 +325,7 @@ async def chat_ws(websocket: WebSocket, username: str, token: str = Query(...)):
         await manager.disconnect(username)
 
 
-# ── File repo endpoints ─────────────────────────────────────────────────────
+# ── File repo ────────────────────────────────────────────────────────────────
 def _safe_name(filename: str) -> str:
     name = Path(filename).name
     safe = "".join(c for c in name if c.isalnum() or c in "-_. ()[]")
@@ -291,7 +416,7 @@ async def delete_file(category: str, filename: str, token: str = Query(...)):
     return {"deleted": path.name, "category": category}
 
 
-# ── Static / root ───────────────────────────────────────────────────────────
+# ── Static / root ────────────────────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -300,19 +425,26 @@ async def root():
     return FileResponse(STATIC_DIR / "index.html")
 
 
-# ── Helpers ─────────────────────────────────────────────────────────────────
-def _send_otp_email(to: str, otp: str):
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def _send_welcome_email(to: str, username: str, initial_pw: str):
     body = (
-        f"Your Dropbear Slurry access code is:\n\n"
-        f"    {otp}\n\n"
-        f"This code expires in 10 minutes. Do not share it.\n\n"
-        f"If you did not request this, ignore this email."
+        f"Hi {username},\n\n"
+        f"Your Dropbear Slurry internal account has been created.\n\n"
+        f"    Temporary password: {initial_pw}\n\n"
+        f"You will be required to set a new password on first login.\n\n"
+        f"Passwords must be at least 8 characters and include uppercase, "
+        f"lowercase, a number, and a special character.\n\n"
+        f"Passwords expire every 90 days.\n\n"
+        f"Do not share this email."
     )
     msg            = MIMEText(body)
-    msg["Subject"] = f"Dropbear access code: {otp}"
+    msg["Subject"] = "Your Dropbear Slurry account"
     msg["From"]    = SMTP_FROM
     msg["To"]      = to
+    _smtp_send(msg)
 
+
+def _smtp_send(msg):
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
         s.ehlo()
         s.starttls()
