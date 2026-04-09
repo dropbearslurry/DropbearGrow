@@ -51,6 +51,7 @@ ADMIN_KEY  = os.getenv("ADMIN_KEY",  "")
 SQUARE_TOKEN     = os.getenv("SQUARE_ACCESS_TOKEN", "")
 SQUARE_ENV       = os.getenv("SQUARE_ENVIRONMENT", "production")  # or "sandbox"
 DEV_TOKEN        = os.getenv("DEV_TOKEN", "")  # set locally to bypass auth for staff.html dev preview
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GCAL_EMBED_URL   = os.getenv("GCAL_EMBED_URL", "")  # legacy iframe embed URL
 GCAL_CREDENTIALS = os.getenv("GCAL_CREDENTIALS_FILE",
                               str(Path(__file__).parent / "gcal-credentials.json"))
@@ -230,119 +231,40 @@ async def create_account(
     return {"created": email, "username": username}
 
 
-# ── Auth: check email (auto-provisions valid domain addresses) ────────────────
-@app.post("/api/auth/check-email")
-async def check_email(email: str = Form(...)):
-    email = email.lower().strip()
+# ── Auth: Google Sign-In ─────────────────────────────────────────────────────
+@app.post("/api/auth/google")
+async def google_auth(credential: str = Form(...)):
+    """Verify a Google ID token and issue a session."""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(503, "Google auth not configured")
+    try:
+        import asyncio
+        from google.oauth2 import id_token as _id_token
+        from google.auth.transport import requests as _greq
+
+        def _verify():
+            return _id_token.verify_oauth2_token(
+                credential, _greq.Request(), GOOGLE_CLIENT_ID
+            )
+
+        idinfo = await asyncio.get_event_loop().run_in_executor(None, _verify)
+    except Exception as e:
+        raise HTTPException(401, f"Invalid Google token: {e}")
+
+    email = idinfo.get("email", "").lower()
     if not email.endswith(f"@{ALLOWED_DOMAIN}"):
-        raise HTTPException(403, f"A @{ALLOWED_DOMAIN} email address is required")
+        raise HTTPException(403, f"A @{ALLOWED_DOMAIN} account is required")
 
-    accounts = _load_accounts()
-
-    if email not in accounts:
-        # Auto-create account and send welcome email
-        initial_pw = _gen_initial_password()
-        username   = email.split("@")[0]
-        accounts[email] = {
-            "username":            username,
-            "password_hash":       pwd_ctx.hash(initial_pw),
-            "is_initial":          True,
-            "created_at":          _iso(),
-            "password_changed_at": _iso(),
-        }
-        _save_accounts(accounts)
-        try:
-            _send_welcome_email(email, username, initial_pw)
-        except Exception as e:
-            accounts.pop(email)
-            _save_accounts(accounts)
-            raise HTTPException(502, f"Failed to send welcome email: {e}")
-        return {"is_initial": True, "is_expired": False, "created": True}
-
-    account    = accounts[email]
-    changed_at = datetime.fromisoformat(account["password_changed_at"])
-    expired    = (datetime.now(timezone.utc) - changed_at).total_seconds() > PASSWORD_EXPIRY
-    return {
-        "is_initial": account.get("is_initial", False),
-        "is_expired": expired,
-        "created":    False,
-    }
-
-
-# ── Auth: login ──────────────────────────────────────────────────────────────
-@app.post("/api/auth/login")
-async def login(email: str = Form(...), password: str = Form(...)):
-    email    = email.lower().strip()
-    accounts = _load_accounts()
-    account  = accounts.get(email)
-
-    if not account or not pwd_ctx.verify(password, account["password_hash"]):
-        raise HTTPException(401, "Incorrect email or password")
-
-    username = account["username"]
-
-    # Check if password change is required (initial or expired)
-    changed_at = datetime.fromisoformat(account["password_changed_at"])
-    expired    = (datetime.now(timezone.utc) - changed_at).total_seconds() > PASSWORD_EXPIRY
-    need_change = account.get("is_initial", False) or expired
-
-    if need_change:
-        reason = "initial" if account.get("is_initial") else "expired"
-        change_token = secrets.token_urlsafe(32)
-        change_store[change_token] = {
-            "email":   email,
-            "expires": _ts() + CHANGE_TTL,
-        }
-        return {
-            "require_password_change": True,
-            "reason":                  reason,
-            "change_token":            change_token,
-            "username":                username,
-        }
-
-    token = secrets.token_urlsafe(32)
-    session_store[token] = {
-        "email":    email,
-        "username": username,
-        "expires":  _ts() + SESSION_TTL,
-    }
-    return {"token": token, "username": username}
-
-
-# ── Auth: set password ───────────────────────────────────────────────────────
-@app.post("/api/auth/set-password")
-async def set_password(
-    change_token: str = Form(...),
-    new_password: str = Form(...),
-):
-    entry = change_store.get(change_token)
-    if not entry or _ts() > entry["expires"]:
-        change_store.pop(change_token, None)
-        raise HTTPException(401, "Password change session expired — please log in again")
-
-    err = _check_password(new_password)
-    if err:
-        raise HTTPException(400, err)
-
-    email    = entry["email"]
-    accounts = _load_accounts()
-    if email not in accounts:
-        raise HTTPException(404, "Account not found")
-
-    accounts[email]["password_hash"]       = pwd_ctx.hash(new_password)
-    accounts[email]["is_initial"]          = False
-    accounts[email]["password_changed_at"] = _iso()
-    _save_accounts(accounts)
-    change_store.pop(change_token)
-
-    username = accounts[email]["username"]
+    username = email.split("@")[0]
     token    = secrets.token_urlsafe(32)
     session_store[token] = {
         "email":    email,
         "username": username,
+        "name":     idinfo.get("name", username),
+        "picture":  idinfo.get("picture", ""),
         "expires":  _ts() + SESSION_TTL,
     }
-    return {"token": token, "username": username}
+    return {"token": token, "username": username, "email": email, "name": idinfo.get("name", username)}
 
 
 # ── WebSocket ────────────────────────────────────────────────────────────────
@@ -692,12 +614,12 @@ def _sa_token(subject: str, scope: str) -> str:
 
 
 @app.get("/api/gmail/inbox")
-async def gmail_inbox(token: str = Query(...), account: str = Query(...)):
-    """Return recent unread messages for a dropbearslurry.com.au account."""
-    _require_token(token)
-    allowed = {f"{u}@{ALLOWED_DOMAIN}" for u in ("admin", "jon", "jed", "elle")}
-    if account not in allowed:
-        raise HTTPException(400, "Invalid account")
+async def gmail_inbox(token: str = Query(...)):
+    """Return recent unread messages for the logged-in user's inbox."""
+    session = _require_token(token)
+    account = session["email"]
+    if not account.endswith(f"@{ALLOWED_DOMAIN}"):
+        raise HTTPException(403, "Invalid account")
     if not Path(GCAL_CREDENTIALS).exists():
         raise HTTPException(503, "Google credentials not configured")
 

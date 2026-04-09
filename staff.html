@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -166,6 +167,22 @@ body::after {
 }
 .status-item { font-family:var(--mono); font-size:10px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
 .status-item span { color:var(--teal-lt); }
+
+/* ── Google Sign-in overlay ─────────────────────────────────────────── */
+.gauth-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+}
+.gauth-overlay.hidden { display: none; }
+.gauth-box {
+  background: var(--bg2); border: 1px solid var(--border2);
+  padding: 48px 56px; display: flex; flex-direction: column;
+  align-items: center; gap: 28px; min-width: 320px;
+}
+.gauth-logo { font-family: var(--display); font-size: 28px; color: var(--teal-lt); letter-spacing: 0.05em; }
+.gauth-sub { font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; }
+.gauth-error { font-family: var(--mono); font-size: 11px; color: var(--alert); display: none; }
+.gauth-error.visible { display: block; }
 
 /* Server config banner */
 .server-banner {
@@ -588,6 +605,16 @@ body::after {
 </head>
 <body>
 
+<!-- Google sign-in overlay -->
+<div class="gauth-overlay" id="gauth-overlay">
+  <div class="gauth-box">
+    <div class="gauth-logo">Dropbear Slurry</div>
+    <div class="gauth-sub">Staff Portal</div>
+    <div id="g_signin_btn"></div>
+    <div class="gauth-error" id="gauth-error"></div>
+  </div>
+</div>
+
 <!-- Dev banner -->
 <div id="dev-banner">
   ⬡ <strong>STAFF UI — dev preview</strong>
@@ -595,7 +622,7 @@ body::after {
   <a href="internal.html">→ internal.html</a>
 </div>
 
-<!-- App (always visible — no auth) -->
+<!-- App -->
 <div id="app">
   <div class="topbar">
     <img src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="" style="height:32px;width:32px;object-fit:contain;flex-shrink:0;" />
@@ -853,6 +880,78 @@ const _host   = (window.location.protocol === 'file:' || window.location.hostnam
 const _defaultServer = `${_proto}//${_host}`;
 const _savedServer   = localStorage.getItem('db_server') || _defaultServer;
 document.getElementById('server-url-input').value = _savedServer;
+
+// ── Google Auth ───────────────────────────────────────────────────────
+const GOOGLE_CLIENT_ID = '363158860701-e9r4mupsole5siv990naeenb42qmnv0g.apps.googleusercontent.com';
+
+function initGoogleAuth() {
+  // Dev bypass — skip Google sign-in if we're using DEV_TOKEN
+  if (sessionToken === 'dev-preview') {
+    document.getElementById('gauth-overlay').classList.add('hidden');
+    return;
+  }
+  // Check for existing session
+  const saved = localStorage.getItem('db_session');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      if (s.token && s.username) {
+        sessionToken = s.token;
+        username     = s.username;
+        document.getElementById('topbar-username').textContent = s.name || s.username;
+        document.getElementById('gauth-overlay').classList.add('hidden');
+        connectWS(_savedServer);
+        return;
+      }
+    } catch(e) {}
+  }
+  // Show sign-in button
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback:  handleGoogleCredential,
+    auto_select: true,
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('g_signin_btn'),
+    { theme: 'filled_black', size: 'large', text: 'signin_with', shape: 'rectangular' }
+  );
+  google.accounts.id.prompt();
+}
+
+async function handleGoogleCredential(response) {
+  const base = _savedServer.replace(/^ws(s?):\/\//, 'http$1://').replace(/\/$/, '');
+  try {
+    const fd = new FormData();
+    fd.append('credential', response.credential);
+    const res  = await fetch(`${base}/api/auth/google`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Auth failed');
+    sessionToken = data.token;
+    username     = data.username;
+    localStorage.setItem('db_session', JSON.stringify({ token: data.token, username: data.username, name: data.name, email: data.email }));
+    document.getElementById('topbar-username').textContent = data.name || data.username;
+    document.getElementById('gauth-overlay').classList.add('hidden');
+    connectWS(_savedServer);
+  } catch(e) {
+    const err = document.getElementById('gauth-error');
+    err.textContent = e.message;
+    err.classList.add('visible');
+  }
+}
+
+function signOut() {
+  localStorage.removeItem('db_session');
+  sessionToken = '';
+  if (ws) ws.close();
+  google.accounts.id.disableAutoSelect();
+  document.getElementById('gauth-overlay').classList.remove('hidden');
+}
+
+// Initialise after GIS script loads
+window.addEventListener('load', () => {
+  if (typeof google !== 'undefined') initGoogleAuth();
+  else document.querySelector('script[src*="gsi/client"]').addEventListener('load', initGoogleAuth);
+});
 
 // ── WebSocket ─────────────────────────────────────────────────────────
 function setConnStatus(state) {
