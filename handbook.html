@@ -51,51 +51,48 @@ body::after {
   z-index: 9999;
 }
 
-/* ── Header ──────────────────────────────────────────────────────────── */
-.site-header {
+/* ── Shared topbar (matches staff.html) ──────────────────────────────── */
+.topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: 56px;
+  display: flex; align-items: center; height: 52px;
   background: var(--bg2); border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; padding: 0 32px; gap: 20px;
+  padding: 0 20px; gap: 0;
 }
-.site-header::after {
+.topbar::after {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg,transparent,var(--border2) 30%,var(--border2) 70%,transparent);
+  background: linear-gradient(90deg,transparent 0%,var(--border2) 30%,var(--border2) 70%,transparent 100%);
   opacity: 0.6;
 }
-.header-logo {
-  display: flex; align-items: center; gap: 12px; text-decoration: none;
-}
-.header-logo img { height: 30px; width: 30px; object-fit: contain; }
-.header-logo-name {
-  font-family: var(--display); font-size: 18px;
+.topbar-logo {
+  font-family: var(--display); font-size: 20px;
   letter-spacing: 0.04em; color: var(--teal-lt);
-  text-shadow: 0 0 20px rgba(212,232,234,0.2);
+  text-shadow: 0 0 20px rgba(212,232,234,0.2); margin-right: 24px;
+  text-decoration: none;
 }
-.header-divider { width: 1px; height: 20px; background: var(--border2); }
-.header-title {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--text-dim);
+.topbar-img { height: 32px; width: 32px; object-fit: contain; flex-shrink: 0; }
+.topbar-divider { width: 1px; height: 22px; background: var(--border2); margin: 0 20px; }
+.topbar-tabs { display: flex; gap: 2px; flex: 1; }
+.tab-btn {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 6px 16px;
+  background: transparent; border: 1px solid transparent;
+  color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+  border-radius: var(--radius); text-decoration: none;
 }
-.header-back {
-  margin-left: auto;
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
-  color: var(--teal); text-decoration: none; border: 1px solid var(--border2);
-  padding: 4px 12px; border-radius: var(--radius); transition: all 0.15s;
-}
-.header-back:hover { background: var(--bg3); color: var(--teal-lt); }
+.tab-btn:hover { color: var(--text); border-color: var(--border2); }
+.tab-btn.active { color: var(--teal-lt); border-color: var(--teal); background: rgba(60,98,103,0.18); }
 
 /* ── Layout ──────────────────────────────────────────────────────────── */
 .layout {
   display: flex;
-  padding-top: 56px;
+  padding-top: 52px;
   min-height: 100%;
 }
 
 /* ── Sidebar nav ─────────────────────────────────────────────────────── */
 .sidebar {
   width: var(--sidebar-w); flex-shrink: 0;
-  position: fixed; top: 56px; bottom: 0; left: 0;
+  position: fixed; top: 52px; bottom: 0; left: 0;
   background: var(--bg2); border-right: 1px solid var(--border);
   overflow-y: auto; padding: 24px 0;
 }
@@ -137,9 +134,7 @@ body::after {
   text-transform: uppercase; color: var(--text-dim); margin-bottom: 48px;
 }
 
-.section {
-  margin-bottom: 64px; scroll-margin-top: 80px;
-}
+.section { margin-bottom: 64px; scroll-margin-top: 72px; }
 
 .section-label {
   font-family: var(--mono); font-size: 9px; letter-spacing: 0.3em;
@@ -157,25 +152,10 @@ h3 {
   color: var(--text-bright); margin: 28px 0 10px;
 }
 
-p {
-  color: var(--text); margin-bottom: 14px;
-  max-width: 640px;
-}
+p { color: var(--text); margin-bottom: 14px; max-width: 640px; }
 
-ul, ol {
-  padding-left: 20px; margin-bottom: 14px; max-width: 640px;
-}
-li {
-  color: var(--text); margin-bottom: 6px;
-}
-
-.placeholder {
-  font-family: var(--mono); font-size: 11px;
-  color: var(--text-dim); font-style: italic;
-  background: var(--bg3); border-left: 2px solid var(--border2);
-  padding: 12px 16px; border-radius: var(--radius);
-  margin-bottom: 14px; max-width: 640px;
-}
+ul, ol { padding-left: 20px; margin-bottom: 14px; max-width: 640px; }
+li { color: var(--text); margin-bottom: 6px; }
 
 .callout {
   background: var(--bg3); border: 1px solid var(--border2);
@@ -186,10 +166,7 @@ li {
 .callout.warn { border-left-color: var(--alert); }
 .callout p { margin: 0; font-size: 14px; }
 
-.divider {
-  border: none; border-top: 1px solid var(--border);
-  margin: 48px 0;
-}
+.divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -200,15 +177,17 @@ li {
 </head>
 <body>
 
-<header class="site-header">
-  <a class="header-logo" href="staff.html">
-    <img src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="Dropbear Slurry" />
-    <span class="header-logo-name">Dropbear Slurry</span>
-  </a>
-  <div class="header-divider"></div>
-  <span class="header-title">Staff Handbook</span>
-  <a class="header-back" href="staff.html">← Back to portal</a>
-</header>
+<div class="topbar">
+  <img class="topbar-img" src="https://e1f68bafd7fbe1380bca.cdn6.editmysite.com/uploads/b/e1f68bafd7fbe1380bca063216c569f9a2c974a8871abc6a40a3ca64f22f6d04/Labelling%20%28No%20Rating%29transparencytest_1768180409.png" alt="" />
+  <a class="topbar-logo" href="staff.html">Dropbear Slurry</a>
+  <div class="topbar-divider"></div>
+  <div class="topbar-tabs">
+    <a class="tab-btn" href="staff.html" data-panel="chat">⬡ COMMS</a>
+    <a class="tab-btn" href="staff.html" data-panel="repo">⬡ FILES</a>
+    <a class="tab-btn active" href="handbook.html">⬡ HANDBOOK</a>
+    <a class="tab-btn" href="staff.html" data-panel="plans">⬡ PLANS</a>
+  </div>
+</div>
 
 <div class="layout">
 
@@ -254,7 +233,8 @@ li {
     <section class="section" id="about">
       <div class="section-label">Getting started</div>
       <h2>About us</h2>
-      <div class="placeholder">[ About the business — what we do, where we operate, how long we've been going. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
     </section>
 
     <hr class="divider" />
@@ -263,7 +243,14 @@ li {
     <section class="section" id="values">
       <div class="section-label">Getting started</div>
       <h2>Our values</h2>
-      <div class="placeholder">[ Core values and what they mean in practice day to day. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <ul>
+        <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit</li>
+        <li>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</li>
+        <li>Ut enim ad minim veniam, quis nostrud exercitation</li>
+        <li>Duis aute irure dolor in reprehenderit in voluptate</li>
+      </ul>
+      <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
     </section>
 
     <hr class="divider" />
@@ -272,7 +259,8 @@ li {
     <section class="section" id="hours">
       <div class="section-label">Working here</div>
       <h2>Hours &amp; location</h2>
-      <div class="placeholder">[ Trading hours, shift patterns, site address(es), remote work policy if any. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
     </section>
 
     <hr class="divider" />
@@ -282,11 +270,11 @@ li {
       <div class="section-label">Working here</div>
       <h2>Leave &amp; time off</h2>
       <h3>Annual leave</h3>
-      <div class="placeholder">[ Entitlement, how to request leave, notice required. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
       <h3>Sick leave</h3>
-      <div class="placeholder">[ Entitlement, how to notify the team when you're unwell. ]</div>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
       <h3>Public holidays</h3>
-      <div class="placeholder">[ Which holidays are observed, any penalty rates or alternate arrangements. ]</div>
+      <p>Sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
     </section>
 
     <hr class="divider" />
@@ -296,9 +284,9 @@ li {
       <div class="section-label">Working here</div>
       <h2>Pay &amp; expenses</h2>
       <h3>Pay cycle</h3>
-      <div class="placeholder">[ When pay is processed, how payslips are delivered. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
       <h3>Expenses</h3>
-      <div class="placeholder">[ What can be claimed, how to submit receipts, approval process. Upload receipts to the Shared Files → Receipts folder. ]</div>
+      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.</p>
     </section>
 
     <hr class="divider" />
@@ -307,7 +295,8 @@ li {
     <section class="section" id="conduct">
       <div class="section-label">Policies</div>
       <h2>Code of conduct</h2>
-      <div class="placeholder">[ Expected behaviour, how we treat each other, customers, and suppliers. Grievance process. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
     </section>
 
     <hr class="divider" />
@@ -319,7 +308,8 @@ li {
       <div class="callout warn">
         <p>All staff are required to complete the site induction before commencing work.</p>
       </div>
-      <div class="placeholder">[ Site-specific hazards, PPE requirements, incident reporting, emergency procedures, first aid contacts. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</p>
     </section>
 
     <hr class="divider" />
@@ -328,7 +318,8 @@ li {
     <section class="section" id="comms">
       <div class="section-label">Policies</div>
       <h2>Communications</h2>
-      <div class="placeholder">[ How we communicate internally (this portal), social media policy, external communications, confidentiality. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
     </section>
 
     <hr class="divider" />
@@ -337,7 +328,12 @@ li {
     <section class="section" id="contacts">
       <div class="section-label">Resources</div>
       <h2>Key contacts</h2>
-      <div class="placeholder">[ Names, roles, and contact details for team leads, payroll, HR, emergency contacts. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <ul>
+        <li><strong>Lorem Ipsum</strong> — Dolor sit amet</li>
+        <li><strong>Consectetur</strong> — Adipiscing elit</li>
+        <li><strong>Sed do eiusmod</strong> — Tempor incididunt</li>
+      </ul>
     </section>
 
     <hr class="divider" />
@@ -350,18 +346,16 @@ li {
         <li><strong>Team portal</strong> — chat and shared files at this address</li>
         <li><strong>Email</strong> — <span style="font-family:var(--mono);font-size:13px;">yourname@dropbearslurry.com.au</span></li>
       </ul>
-      <div class="placeholder">[ Any other software, equipment, or systems staff need access to. ]</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
     </section>
 
   </main>
 </div>
 
 <script>
-// Set last updated date
 document.getElementById('last-updated').textContent =
   new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
-// Highlight active nav link on scroll
 const sections = document.querySelectorAll('.section');
 const navLinks  = document.querySelectorAll('.nav-link');
 
