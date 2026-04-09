@@ -108,12 +108,23 @@ body::after {
   box-shadow: 0 0 0 3px rgba(212,232,234,0.1);
 }
 
-.login-server-note {
-  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
-  margin-top: 6px; padding: 6px 8px;
-  background: var(--bg3); border-left: 2px solid var(--border2);
-  line-height: 1.6;
+.login-error {
+  font-family: var(--mono); font-size: 11px; color: var(--red);
+  margin-top: 10px; padding: 8px 10px;
+  background: rgba(184,58,42,0.08); border-left: 2px solid var(--red);
+  display: none;
 }
+.login-error.visible { display: block; }
+
+.login-hint {
+  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  margin-top: 8px; text-align: center;
+}
+.login-hint a { color: var(--teal); cursor: pointer; text-decoration: none; }
+.login-hint a:hover { text-decoration: underline; }
+
+.login-step { display: none; }
+.login-step.active { display: block; }
 
 .login-btn {
   width: 100%; margin-top: 24px; padding: 11px;
@@ -417,15 +428,32 @@ body::after {
   <div class="login-box">
     <div class="login-logo">Dropbear Slurry</div>
     <div class="login-sub">team · secure · internal</div>
-    <label class="login-label" for="username-input">callsign</label>
-    <input class="login-input" id="username-input" type="text" maxlength="24" placeholder="enter your handle" autocomplete="off" spellcheck="false" />
-    <label class="login-label" for="server-input-login">chat server <span style="opacity:.5">(optional)</span></label>
-    <input class="login-input" id="server-input-login" type="text" placeholder="ws://your-server:7331" autocomplete="off" spellcheck="false" />
-    <div class="login-server-note">
-      Leave blank to browse files only.<br>
-      Run <code style="color:var(--teal-lt)">./run.sh</code> on a shared host for live chat.
+
+    <!-- Step 1: email + server -->
+    <div class="login-step active" id="step-email">
+      <label class="login-label" for="email-input">email address</label>
+      <input class="login-input" id="email-input" type="email"
+        placeholder="you@dropbearslurry.com.au" autocomplete="email" spellcheck="false" />
+      <label class="login-label" for="server-input">server</label>
+      <input class="login-input" id="server-input" type="text"
+        placeholder="ws://your-server:7331" autocomplete="off" spellcheck="false" />
+      <div class="login-error" id="step1-error"></div>
+      <button class="login-btn" id="send-otp-btn">SEND CODE</button>
     </div>
-    <button class="login-btn" id="login-btn">AUTHENTICATE</button>
+
+    <!-- Step 2: OTP -->
+    <div class="login-step" id="step-otp">
+      <div class="login-hint" style="margin-bottom:20px;text-align:left;">
+        Code sent to <span id="otp-email-display" style="color:var(--teal-lt)"></span>
+      </div>
+      <label class="login-label" for="otp-input">access code</label>
+      <input class="login-input" id="otp-input" type="text" maxlength="6"
+        placeholder="000000" autocomplete="one-time-code" spellcheck="false"
+        style="letter-spacing:0.3em;font-size:22px;text-align:center;" />
+      <div class="login-error" id="step2-error"></div>
+      <button class="login-btn" id="verify-otp-btn">VERIFY</button>
+      <div class="login-hint"><a id="back-btn">← use a different address</a></div>
+    </div>
   </div>
 </div>
 
@@ -525,13 +553,14 @@ body::after {
 
 <script>
 // ── State ─────────────────────────────────────────────────────────────
-let username  = '';
-let serverUrl = '';
-let ws        = null;
-let wsReconnectTimer = null;
-let reconnectAttempts = 0;
-let categories = ['general', 'receipts', 'marketing', 'production', 'assets'];
-let activeCategory = null; // null = all
+let username       = '';
+let serverUrl      = '';
+let sessionToken   = '';
+let ws             = null;
+let wsReconnectTimer   = null;
+let reconnectAttempts  = 0;
+let categories     = ['general', 'receipts', 'marketing', 'production', 'assets'];
+let activeCategory = null;
 
 function apiBase() {
   if (!serverUrl) return null;
@@ -549,41 +578,105 @@ function userColor(u) {
   return colorMap[u];
 }
 
-// ── Login ─────────────────────────────────────────────────────────────
-document.getElementById('login-btn').addEventListener('click', doLogin);
-['username-input', 'server-input-login'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+// Pre-fill server URL from last session
+const _savedServer = localStorage.getItem('db_server');
+if (_savedServer) document.getElementById('server-input').value = _savedServer;
+
+// ── Login — step 1: send OTP ──────────────────────────────────────────
+document.getElementById('send-otp-btn').addEventListener('click', doSendOtp);
+document.getElementById('email-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSendOtp(); });
+document.getElementById('server-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSendOtp(); });
+
+async function doSendOtp() {
+  const email = document.getElementById('email-input').value.trim().toLowerCase();
+  const sv    = document.getElementById('server-input').value.trim();
+  const errEl = document.getElementById('step1-error');
+  errEl.classList.remove('visible');
+
+  if (!email) { document.getElementById('email-input').focus(); return; }
+  if (!sv)    { document.getElementById('server-input').focus(); return; }
+
+  serverUrl = sv;
+  const base = apiBase();
+  const btn  = document.getElementById('send-otp-btn');
+  btn.textContent = 'SENDING…';
+  btn.disabled    = true;
+
+  try {
+    const fd = new FormData();
+    fd.append('email', email);
+    const res = await fetch(`${base}/api/auth/request-otp`, { method: 'POST', body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    // Show OTP step
+    document.getElementById('otp-email-display').textContent = email;
+    document.getElementById('step-email').classList.remove('active');
+    document.getElementById('step-otp').classList.add('active');
+    document.getElementById('otp-input').focus();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.add('visible');
+  } finally {
+    btn.textContent = 'SEND CODE';
+    btn.disabled    = false;
+  }
+}
+
+// ── Login — step 2: verify OTP ────────────────────────────────────────
+document.getElementById('verify-otp-btn').addEventListener('click', doVerifyOtp);
+document.getElementById('otp-input').addEventListener('keydown', e => { if (e.key === 'Enter') doVerifyOtp(); });
+document.getElementById('back-btn').addEventListener('click', () => {
+  document.getElementById('step-otp').classList.remove('active');
+  document.getElementById('step-email').classList.add('active');
+  document.getElementById('step2-error').classList.remove('visible');
+  document.getElementById('otp-input').value = '';
 });
 
-function doLogin() {
-  const val = document.getElementById('username-input').value.trim().replace(/\s+/g,'_');
-  if (!val) { document.getElementById('username-input').focus(); return; }
-  username = val;
+async function doVerifyOtp() {
+  const email  = document.getElementById('email-input').value.trim().toLowerCase();
+  const otp    = document.getElementById('otp-input').value.trim();
+  const errEl  = document.getElementById('step2-error');
+  const base   = apiBase();
+  errEl.classList.remove('visible');
 
-  const sv = document.getElementById('server-input-login').value.trim();
-  if (sv) {
-    serverUrl = sv;
-    localStorage.setItem('db_server', sv);
-  } else {
-    serverUrl = localStorage.getItem('db_server') || '';
+  if (!otp) { document.getElementById('otp-input').focus(); return; }
+
+  const btn = document.getElementById('verify-otp-btn');
+  btn.textContent = 'VERIFYING…';
+  btn.disabled    = true;
+
+  try {
+    const fd = new FormData();
+    fd.append('email', email);
+    fd.append('otp',   otp);
+    const res  = await fetch(`${base}/api/auth/verify-otp`, { method: 'POST', body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    sessionToken = data.token;
+    username     = data.username;
+    localStorage.setItem('db_server', serverUrl);
+    doEnterApp();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.add('visible');
+    document.getElementById('otp-input').value = '';
+    document.getElementById('otp-input').focus();
+  } finally {
+    btn.textContent = 'VERIFY';
+    btn.disabled    = false;
   }
+}
 
+function doEnterApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   document.getElementById('topbar-username').textContent = username;
   document.getElementById('chat-prompt').textContent = `${username} ▸`;
-
   document.getElementById('server-url-input').value = serverUrl;
-
-  if (serverUrl) {
-    connectWS(serverUrl);
-    document.getElementById('server-banner').classList.add('hidden');
-  } else {
-    setConnStatus('no-server');
-    buildCategoryUI();
-  }
-
-  loadFiles();
+  connectWS(serverUrl);
+  document.getElementById('server-banner').classList.add('hidden');
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────
@@ -599,10 +692,10 @@ function connectWS(url) {
   clearTimeout(wsReconnectTimer);
   setConnStatus('connecting');
   serverUrl = url;
-  localStorage.setItem('db_server', url);
   document.getElementById('server-url-input').value = url;
 
-  const wsUrl = url.replace(/\/$/, '') + '/ws/' + encodeURIComponent(username);
+  const wsUrl = url.replace(/\/$/, '') + '/ws/' + encodeURIComponent(username)
+    + '?token=' + encodeURIComponent(sessionToken);
   ws = new WebSocket(wsUrl);
 
   ws.onopen = async () => {
@@ -711,7 +804,7 @@ async function fetchCategories() {
   const base = apiBase();
   if (!base) return;
   try {
-    const res = await fetch(`${base}/api/categories`);
+    const res = await fetch(`${base}/api/categories?token=${encodeURIComponent(sessionToken)}`);
     if (res.ok) categories = await res.json();
   } catch (_) {}
   buildCategoryUI();
@@ -770,6 +863,7 @@ document.getElementById('upload-input').addEventListener('change', async e => {
       fd.append('file', file);
       fd.append('uploader', username);
       fd.append('category', cat);
+      fd.append('token', sessionToken);
       const res = await fetch(`${base}/api/files`, { method: 'POST', body: fd });
       if (!res.ok) {
         const err = await res.json().catch(()=>({}));
@@ -788,7 +882,7 @@ async function deleteFile(category, name) {
   const base = apiBase();
   if (!base) return;
   try {
-    const res = await fetch(`${base}/api/files/${encodeURIComponent(category)}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    const res = await fetch(`${base}/api/files/${encodeURIComponent(category)}/${encodeURIComponent(name)}?token=${encodeURIComponent(sessionToken)}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     toast(`Deleted ${name}`, 'warn');
     loadFiles();
@@ -826,8 +920,8 @@ async function loadFiles() {
 
   try {
     const url = activeCategory
-      ? `${base}/api/files?category=${encodeURIComponent(activeCategory)}`
-      : `${base}/api/files`;
+      ? `${base}/api/files?token=${encodeURIComponent(sessionToken)}&category=${encodeURIComponent(activeCategory)}`
+      : `${base}/api/files?token=${encodeURIComponent(sessionToken)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const files = await res.json();
@@ -885,7 +979,7 @@ function appendFileRow(ul, f, base) {
     <div class="file-size">${humanSize(f.size||0)}</div>
     <div class="file-type">${modified}</div>
     <div class="file-actions">
-      <a class="file-btn" href="${base}/api/files/${encodeURIComponent(f.category)}/${encodeURIComponent(f.name)}" target="_blank" rel="noopener" title="download">↓</a>
+      <a class="file-btn" href="${base}/api/files/${encodeURIComponent(f.category)}/${encodeURIComponent(f.name)}?token=${encodeURIComponent(sessionToken)}" target="_blank" rel="noopener" title="download">↓</a>
       <button class="file-btn del-btn" title="delete">✕</button>
     </div>
   `;
