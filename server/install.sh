@@ -147,10 +147,27 @@ fi
 
 # ── Permissions ───────────────────────────────────────────────────────────────
 step "Setting permissions"
-chown -R "${SERVICE_USER}:${SERVICE_USER}" "$INSTALL_DIR"
-chmod 750 "${INSTALL_DIR}/server"
+# Code and config stay root-owned; the service only gets write access to what it actually writes
+chown -R root:root "$INSTALL_DIR"
+chmod 755 "$INSTALL_DIR"
+
+# .env readable by service user, not world
+chown root:"${SERVICE_USER}" "$ENV_FILE"
 chmod 640 "$ENV_FILE"
-ok "Permissions set"
+
+# Service user owns only the runtime-writable directories/files
+UPLOAD_PATH="${INSTALL_DIR}/server/uploads"
+STATE_FILE="${INSTALL_DIR}/server/accounts.json"
+
+chown -R "${SERVICE_USER}:${SERVICE_USER}" "$UPLOAD_PATH"
+chmod 750 "$UPLOAD_PATH"
+
+# Pre-create accounts.json so it is owned correctly from the start
+[[ -f "$STATE_FILE" ]] || echo '{}' > "$STATE_FILE"
+chown "${SERVICE_USER}:${SERVICE_USER}" "$STATE_FILE"
+chmod 640 "$STATE_FILE"
+
+ok "Permissions set (code root-owned, uploads + accounts.json service-writable)"
 
 # ── Systemd service ───────────────────────────────────────────────────────────
 step "Installing systemd service"
@@ -173,7 +190,7 @@ EnvironmentFile=${ENV_FILE}
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=${INSTALL_DIR}/server
+ReadWritePaths=${INSTALL_DIR}/server/uploads ${INSTALL_DIR}/server/accounts.json
 
 [Install]
 WantedBy=multi-user.target
