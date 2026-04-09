@@ -50,6 +50,7 @@ ADMIN_KEY  = os.getenv("ADMIN_KEY",  "")
 
 SQUARE_TOKEN     = os.getenv("SQUARE_ACCESS_TOKEN", "")
 SQUARE_ENV       = os.getenv("SQUARE_ENVIRONMENT", "production")  # or "sandbox"
+DEV_TOKEN        = os.getenv("DEV_TOKEN", "")  # set locally to bypass auth for staff.html dev preview
 GCAL_EMBED_URL   = os.getenv("GCAL_EMBED_URL", "")  # legacy iframe embed URL
 GCAL_CREDENTIALS = os.getenv("GCAL_CREDENTIALS_FILE",
                               str(Path(__file__).parent / "gcal-credentials.json"))
@@ -99,7 +100,9 @@ def _iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _valid_session(token: str) -> dict | None:
+def _valid_session(token: str, username: str | None = None) -> dict | None:
+    if DEV_TOKEN and token == DEV_TOKEN:
+        return {"username": username or "preview", "email": "preview@dropbearslurry.com.au", "expires": _ts() + 86400}
     entry = session_store.get(token)
     if not entry or _ts() > entry["expires"]:
         session_store.pop(token, None)
@@ -345,7 +348,7 @@ async def set_password(
 # ── WebSocket ────────────────────────────────────────────────────────────────
 @app.websocket("/ws/{username}")
 async def chat_ws(websocket: WebSocket, username: str, token: str = Query(...)):
-    session = _valid_session(token)
+    session = _valid_session(token, username)
     if not session or session["username"] != username:
         await websocket.close(code=1008)
         return
