@@ -444,19 +444,27 @@ body::after {
       <span class="login-logo-name">Dropbear Slurry</span>
     </div>
 
-    <!-- Step 1: login -->
-    <div class="login-step active" id="step-login">
+    <!-- Step 1: email -->
+    <div class="login-step active" id="step-email">
       <label class="login-label" for="email-input">email</label>
       <input class="login-input" id="email-input" type="email"
         placeholder="you@dropbearslurry.com.au" autocomplete="email" spellcheck="false" />
-      <label class="login-label" for="password-input">password</label>
-      <input class="login-input" id="password-input" type="password"
-        placeholder="••••••••" autocomplete="current-password" />
       <label class="login-label" for="server-input">server</label>
       <input class="login-input" id="server-input" type="text"
         placeholder="ws://your-server:7331" autocomplete="off" spellcheck="false" />
+      <div class="login-error" id="email-error"></div>
+      <button class="login-btn" id="continue-btn">CONTINUE</button>
+    </div>
+
+    <!-- Step 2: password -->
+    <div class="login-step" id="step-password">
+      <div class="pw-expiry-note" id="pw-context-note"></div>
+      <label class="login-label" for="password-input">password</label>
+      <input class="login-input" id="password-input" type="password"
+        placeholder="••••••••" autocomplete="current-password" />
       <div class="login-error" id="login-error"></div>
       <button class="login-btn" id="login-btn">SIGN IN</button>
+      <div class="login-hint"><a id="back-to-email">← different address</a></div>
     </div>
 
     <!-- Step 2: set new password (initial or expired) -->
@@ -606,28 +614,78 @@ function userColor(u) {
 const _savedServer = localStorage.getItem('db_server');
 if (_savedServer) document.getElementById('server-input').value = _savedServer;
 
-// ── Login — step 1: sign in ───────────────────────────────────────────
+// ── Login — step 1: email ─────────────────────────────────────────────
 let _changeToken = '';
 
-document.getElementById('login-btn').addEventListener('click', doLogin);
-['email-input', 'password-input', 'server-input'].forEach(id =>
-  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); })
+document.getElementById('continue-btn').addEventListener('click', doCheckEmail);
+['email-input', 'server-input'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doCheckEmail(); })
 );
 
-async function doLogin() {
-  const email  = document.getElementById('email-input').value.trim().toLowerCase();
-  const pw     = document.getElementById('password-input').value;
-  const sv     = document.getElementById('server-input').value.trim();
-  const errEl  = document.getElementById('login-error');
+document.getElementById('back-to-email').addEventListener('click', () => {
+  document.getElementById('step-password').classList.remove('active');
+  document.getElementById('step-email').classList.add('active');
+  document.getElementById('password-input').value = '';
+  document.getElementById('login-error').classList.remove('visible');
+});
+
+async function doCheckEmail() {
+  const email = document.getElementById('email-input').value.trim().toLowerCase();
+  const sv    = document.getElementById('server-input').value.trim();
+  const errEl = document.getElementById('email-error');
   errEl.classList.remove('visible');
 
-  if (!email || !pw || !sv) {
-    errEl.textContent = 'All fields are required';
-    errEl.classList.add('visible');
-    return;
-  }
+  if (!email) { document.getElementById('email-input').focus(); return; }
+  if (!sv)    { document.getElementById('server-input').focus(); return; }
 
   serverUrl = sv;
+  const base = apiBase();
+  const btn  = document.getElementById('continue-btn');
+  btn.textContent = '…';
+  btn.disabled    = true;
+
+  try {
+    const fd = new FormData();
+    fd.append('email', email);
+    const res  = await fetch(`${base}/api/auth/check-email`, { method: 'POST', body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    const note = document.getElementById('pw-context-note');
+    if (data.is_initial) {
+      note.textContent = 'Check your email for the temporary password we sent when your account was created.';
+      note.style.color = 'var(--teal-lt)';
+    } else if (data.is_expired) {
+      note.textContent = 'Your password has expired. Enter it below — you\'ll be prompted to set a new one.';
+      note.style.color = 'var(--alert)';
+    } else {
+      note.textContent = '';
+    }
+
+    document.getElementById('step-email').classList.remove('active');
+    document.getElementById('step-password').classList.add('active');
+    document.getElementById('password-input').focus();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.add('visible');
+  } finally {
+    btn.textContent = 'CONTINUE';
+    btn.disabled    = false;
+  }
+}
+
+// ── Login — step 2: password ──────────────────────────────────────────
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+async function doLogin() {
+  const email = document.getElementById('email-input').value.trim().toLowerCase();
+  const pw    = document.getElementById('password-input').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.remove('visible');
+
+  if (!pw) { document.getElementById('password-input').focus(); return; }
+
   const base = apiBase();
   const btn  = document.getElementById('login-btn');
   btn.textContent = 'SIGNING IN…';
@@ -648,7 +706,7 @@ async function doLogin() {
       note.textContent = data.reason === 'initial'
         ? 'Welcome. Please set a permanent password to continue.'
         : 'Your password has expired. Please set a new one.';
-      document.getElementById('step-login').classList.remove('active');
+      document.getElementById('step-password').classList.remove('active');
       document.getElementById('step-set-password').classList.add('active');
       document.getElementById('new-password-input').focus();
     } else {

@@ -219,6 +219,22 @@ async def create_account(
     return {"created": email, "username": username}
 
 
+# ── Auth: check email ────────────────────────────────────────────────────────
+@app.post("/api/auth/check-email")
+async def check_email(email: str = Form(...)):
+    email    = email.lower().strip()
+    accounts = _load_accounts()
+    account  = accounts.get(email)
+    if not account:
+        raise HTTPException(404, "No account found for that address")
+    changed_at = datetime.fromisoformat(account["password_changed_at"])
+    expired    = (datetime.now(timezone.utc) - changed_at).total_seconds() > PASSWORD_EXPIRY
+    return {
+        "is_initial": account.get("is_initial", False),
+        "is_expired": expired,
+    }
+
+
 # ── Auth: login ──────────────────────────────────────────────────────────────
 @app.post("/api/auth/login")
 async def login(email: str = Form(...), password: str = Form(...)):
