@@ -371,6 +371,33 @@ body::after {
   font-family: var(--mono); font-size: 10px; color: var(--text-dim);
 }
 
+/* Quick links */
+.dash-quicklink {
+  flex: 1; min-width: 120px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  text-decoration: none; transition: all 0.15s; position: relative;
+  overflow: hidden;
+}
+.dash-quicklink::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+  opacity: 0; transition: opacity 0.15s;
+}
+.dash-quicklink:hover { border-color: var(--border2); background: var(--bg3); }
+.dash-quicklink:hover::before { opacity: 1; }
+.dash-quicklink-icon {
+  font-size: 22px; color: var(--teal); line-height: 1;
+  transition: color 0.15s;
+}
+.dash-quicklink:hover .dash-quicklink-icon { color: var(--teal-lt); }
+.dash-quicklink-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--text-dim); transition: color 0.15s;
+}
+.dash-quicklink:hover .dash-quicklink-label { color: var(--text); }
+
 /* Square tile */
 .square-tile { flex: 0 0 320px; }
 .square-body { padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; }
@@ -540,6 +567,27 @@ body::after {
     <!-- Dashboard Panel -->
     <div class="panel active" id="panel-dashboard">
       <div class="dashboard-layout">
+
+        <!-- Quick links -->
+        <div class="dashboard-row">
+          <a class="dash-quicklink" href="#" data-section="inventory">
+            <div class="dash-quicklink-icon">⬡</div>
+            <div class="dash-quicklink-label">Inventory</div>
+          </a>
+          <a class="dash-quicklink" href="#" data-section="pos">
+            <div class="dash-quicklink-icon">⬡</div>
+            <div class="dash-quicklink-label">Point of Sale</div>
+          </a>
+          <a class="dash-quicklink" href="#" data-section="orders">
+            <div class="dash-quicklink-icon">⬡</div>
+            <div class="dash-quicklink-label">Orders</div>
+          </a>
+          <a class="dash-quicklink" href="handbook.html" data-section="calendar">
+            <div class="dash-quicklink-icon">⬡</div>
+            <div class="dash-quicklink-label">Calendar</div>
+          </a>
+        </div>
+
         <div class="dashboard-row">
 
           <!-- Square tile -->
