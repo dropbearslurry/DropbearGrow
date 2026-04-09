@@ -610,8 +610,14 @@ function userColor(u) {
   return colorMap[u];
 }
 
-// Pre-fill server URL — saved session takes priority over default
-const _savedServer = localStorage.getItem('db_server') || 'ws://localhost:7331';
+// Derive default server URL from the page's own host so it works
+// whether served from the Pi directly or opened as a local file.
+const _proto  = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const _host   = (window.location.protocol === 'file:' || window.location.hostname === '')
+  ? 'localhost:7331'
+  : window.location.host;
+const _defaultServer = `${_proto}//${_host}`;
+const _savedServer   = localStorage.getItem('db_server') || _defaultServer;
 document.getElementById('server-input').value     = _savedServer;
 document.getElementById('server-url-input').value = _savedServer;
 

@@ -110,6 +110,12 @@ for cat in general receipts marketing production assets; do
 done
 ok "Upload directories ready"
 
+# ── Internal web interface ────────────────────────────────────────────────────
+step "Installing internal web interface"
+mkdir -p "${INSTALL_DIR}/server/static"
+cp "${INSTALL_DIR}/internal.html" "${INSTALL_DIR}/server/static/index.html"
+ok "Internal page ready (served at /)"
+
 # ── .env file ─────────────────────────────────────────────────────────────────
 step "Checking .env configuration"
 ENV_FILE="${INSTALL_DIR}/server/.env"
