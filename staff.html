@@ -649,14 +649,18 @@ body::after {
           <div class="dash-tile inv-tile">
             <div class="dash-tile-header">
               <span class="dash-tile-title">⬡ stock levels</span>
-              <span class="dash-tile-meta" id="inv-meta">loading…</span>
+              <span class="dash-tile-meta">North Booval · 9 Apr 2026</span>
             </div>
-            <div id="inv-body">
-              <table class="inv-table">
-                <thead><tr><th>Product</th><th>SKU</th><th>Price</th><th>Stock</th></tr></thead>
-                <tbody id="inv-tbody"><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-dim);font-family:var(--mono);font-size:11px;">loading…</td></tr></tbody>
-              </table>
-            </div>
+            <table class="inv-table">
+              <thead><tr><th>Product</th><th>SKU</th><th>Price</th><th>Stock</th></tr></thead>
+              <tbody>
+                <tr><td>K-666 Plant Tonic 1L</td><td>DSLF-01-666</td><td>$40.00</td><td><span class="inv-qty ok">45</span></td></tr>
+                <tr><td>K-666 Plant Tonic 5L</td><td>DSLF-05-666</td><td>$170.00</td><td><span class="inv-qty ok">30</span></td></tr>
+                <tr><td>K-333 Plant Tonic 1L</td><td>DSLF-01-333</td><td>$40.00</td><td><span class="inv-qty ok">26</span></td></tr>
+                <tr><td>Premium Soil <span class="inv-badge">coming soon</span></td><td>DSLF-SOIL-001</td><td>—</td><td><span class="inv-qty out">0</span></td></tr>
+                <tr><td>11oz Coffee Mug <span class="inv-badge">hidden</span></td><td>MUG-001</td><td>$13.99</td><td><span class="inv-qty out">0</span></td></tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- Google Calendar tile -->
@@ -666,7 +670,7 @@ body::after {
               <span class="dash-tile-meta" id="gcal-meta">dropbear slurry</span>
             </div>
             <div class="gcal-body" id="gcal-body">
-              <div class="cal-empty">loading…</div>
+              <div class="cal-empty">share calendar with service account to enable</div>
             </div>
           </div>
 
@@ -1161,26 +1165,15 @@ async function loadDashboard() {
   const base = apiBase();
   if (!base) {
     renderSquareUnconfigured('Connect to a server first');
-    renderGcalUnconfigured('Connect to a server first');
     return;
   }
-
   try {
-    const res  = await fetch(`${base}/api/integrations/config?token=${encodeURIComponent(sessionToken)}`);
-    const cfg  = await res.json();
-
-    if (cfg.square) {
-      loadSquare(base);
-      loadInventory(base);
-    } else {
-      renderSquareUnconfigured('Add SQUARE_ACCESS_TOKEN to the server .env to enable');
-      document.getElementById('inv-meta').textContent = 'Square not configured';
-    }
-
-    loadCalendar(base);
+    const res = await fetch(`${base}/api/integrations/config?token=${encodeURIComponent(sessionToken)}`);
+    const cfg = await res.json();
+    if (cfg.square) loadSquare(base);
+    else renderSquareUnconfigured('Add SQUARE_ACCESS_TOKEN to the server .env to enable');
   } catch (e) {
     renderSquareUnconfigured('Could not reach server');
-    document.getElementById('gcal-body').innerHTML = '<div class="cal-empty">could not reach server</div>';
   }
 }
 
