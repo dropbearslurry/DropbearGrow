@@ -610,9 +610,9 @@ function userColor(u) {
   return colorMap[u];
 }
 
-// Pre-fill server URL from last session
-const _savedServer = localStorage.getItem('db_server');
-if (_savedServer) document.getElementById('server-input').value = _savedServer;
+// Pre-fill server URL — saved session takes priority over default
+const _savedServer = localStorage.getItem('db_server') || 'ws://101.188.146.45:7331';
+document.getElementById('server-input').value = _savedServer;
 
 // ── Login — step 1: email ─────────────────────────────────────────────
 let _changeToken = '';
