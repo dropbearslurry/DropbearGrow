@@ -612,7 +612,8 @@ function userColor(u) {
 
 // Pre-fill server URL — saved session takes priority over default
 const _savedServer = localStorage.getItem('db_server') || 'ws://101.188.146.45:7331';
-document.getElementById('server-input').value = _savedServer;
+document.getElementById('server-input').value     = _savedServer;
+document.getElementById('server-url-input').value = _savedServer;
 
 // ── Login — step 1: email ─────────────────────────────────────────────
 let _changeToken = '';
