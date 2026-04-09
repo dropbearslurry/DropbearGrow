@@ -637,7 +637,7 @@ body::after {
             <div class="dash-quicklink-icon">⬡</div>
             <div class="dash-quicklink-label">Orders</div>
           </a>
-          <a class="dash-quicklink" href="handbook.html" data-section="calendar">
+          <a class="dash-quicklink" href="#" data-section="calendar">
             <div class="dash-quicklink-icon">⬡</div>
             <div class="dash-quicklink-label">Calendar</div>
           </a>
@@ -649,50 +649,14 @@ body::after {
           <div class="dash-tile inv-tile">
             <div class="dash-tile-header">
               <span class="dash-tile-title">⬡ stock levels</span>
-              <span class="dash-tile-meta">North Booval · as of 9 Apr 2026</span>
+              <span class="dash-tile-meta" id="inv-meta">loading…</span>
             </div>
-            <table class="inv-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>SKU</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>K-666 Plant Tonic 1L</td>
-                  <td>DSLF-01-666</td>
-                  <td>$40.00</td>
-                  <td><span class="inv-qty ok">45</span></td>
-                </tr>
-                <tr>
-                  <td>K-666 Plant Tonic 5L</td>
-                  <td>DSLF-05-666</td>
-                  <td>$170.00</td>
-                  <td><span class="inv-qty ok">30</span></td>
-                </tr>
-                <tr>
-                  <td>K-333 Plant Tonic 1L</td>
-                  <td>DSLF-01-333</td>
-                  <td>$40.00</td>
-                  <td><span class="inv-qty ok">26</span></td>
-                </tr>
-                <tr>
-                  <td>Premium Soil</td>
-                  <td>DSLF-SOIL-001</td>
-                  <td>—</td>
-                  <td><span class="inv-qty out">0</span></td>
-                </tr>
-                <tr>
-                  <td>Coffee Mug <span class="inv-badge">hidden</span></td>
-                  <td>MUG-001</td>
-                  <td>$13.99</td>
-                  <td><span class="inv-qty out">0</span></td>
-                </tr>
-              </tbody>
-            </table>
+            <div id="inv-body">
+              <table class="inv-table">
+                <thead><tr><th>Product</th><th>SKU</th><th>Price</th><th>Stock</th></tr></thead>
+                <tbody id="inv-tbody"><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-dim);font-family:var(--mono);font-size:11px;">loading…</td></tr></tbody>
+              </table>
+            </div>
           </div>
 
           <!-- Google Calendar tile -->
@@ -1205,8 +1169,13 @@ async function loadDashboard() {
     const res  = await fetch(`${base}/api/integrations/config?token=${encodeURIComponent(sessionToken)}`);
     const cfg  = await res.json();
 
-    if (cfg.square) loadSquare(base);
-    else renderSquareUnconfigured('Add SQUARE_ACCESS_TOKEN to the server .env to enable');
+    if (cfg.square) {
+      loadSquare(base);
+      loadInventory(base);
+    } else {
+      renderSquareUnconfigured('Add SQUARE_ACCESS_TOKEN to the server .env to enable');
+      document.getElementById('inv-meta').textContent = 'Square not configured';
+    }
 
     loadCalendar(base);
   } catch (e) {
@@ -1245,6 +1214,36 @@ async function loadSquare(base) {
 function renderSquareUnconfigured(msg) {
   document.getElementById('square-body').className = 'square-unconfigured';
   document.getElementById('square-body').textContent = msg;
+}
+
+async function loadInventory(base) {
+  const tbody = document.getElementById('inv-tbody');
+  const meta  = document.getElementById('inv-meta');
+  try {
+    const res = await fetch(`${base}/api/integrations/inventory?token=${encodeURIComponent(sessionToken)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { items } = await res.json();
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-dim);font-family:var(--mono);font-size:11px;">no items found</td></tr>';
+      return;
+    }
+    const now = new Date();
+    meta.textContent = `${items.length} items · ${now.toLocaleTimeString('en-AU', {hour:'2-digit',minute:'2-digit'})}`;
+    tbody.innerHTML = items.map(item => {
+      const price = item.price != null ? `$${item.price.toFixed(2)}` : '—';
+      const qtyClass = item.qty > 0 ? 'ok' : 'out';
+      const badge = item.hidden ? ' <span class="inv-badge">hidden</span>' : '';
+      return `<tr>
+        <td>${item.name}${badge}</td>
+        <td>${item.sku || '—'}</td>
+        <td>${price}</td>
+        <td><span class="inv-qty ${qtyClass}">${item.qty}</span></td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text-dim);font-family:var(--mono);font-size:11px;">error: ${e.message}</td></tr>`;
+    meta.textContent = 'error';
+  }
 }
 
 async function loadCalendar(base) {

@@ -530,6 +530,95 @@ async def square_summary(token: str = Query(...)):
     }
 
 
+@app.get("/api/integrations/inventory")
+async def inventory_levels(token: str = Query(...)):
+    """Fetch catalog items + live inventory counts from Square."""
+    _require_token(token)
+    if not SQUARE_TOKEN:
+        raise HTTPException(503, "Square not configured")
+
+    base_url = (
+        "https://connect.squareupsandbox.com"
+        if SQUARE_ENV == "sandbox"
+        else "https://connect.squareup.com"
+    )
+    headers = {
+        "Authorization": f"Bearer {SQUARE_TOKEN}",
+        "Square-Version": "2024-04-17",
+        "Content-Type":  "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        # 1. Fetch all catalog items + variations in one call
+        catalog_resp = await client.post(
+            f"{base_url}/v2/catalog/search",
+            headers=headers,
+            json={
+                "object_types": ["ITEM"],
+                "include_related_objects": True,
+            },
+        )
+        if catalog_resp.status_code != 200:
+            raise HTTPException(502, f"Square catalog error: {catalog_resp.status_code}")
+
+        catalog_data = catalog_resp.json()
+        items     = catalog_data.get("objects", [])
+        related   = {o["id"]: o for o in catalog_data.get("related_objects", [])}
+
+        # Build variation_id → {name, sku, price, item_name, is_deleted} map
+        variation_map = {}
+        for item in items:
+            item_name = item.get("item_data", {}).get("name", "")
+            is_hidden = "PRIVATE" in item.get("item_data", {}).get("visibility", "")
+            for var in item.get("item_data", {}).get("variations", []):
+                var_data = var.get("item_variation_data", {})
+                price_money = var_data.get("price_money", {})
+                price = price_money.get("amount", 0) / 100 if price_money else None
+                variation_map[var["id"]] = {
+                    "name":     item_name,
+                    "var_name": var_data.get("name", ""),
+                    "sku":      var_data.get("sku", ""),
+                    "price":    price,
+                    "hidden":   is_hidden or item.get("is_deleted", False),
+                }
+
+        if not variation_map:
+            return {"items": []}
+
+        # 2. Fetch inventory counts for all variation IDs
+        inv_resp = await client.post(
+            f"{base_url}/v2/inventory/counts/batch-retrieve",
+            headers=headers,
+            json={"catalog_object_ids": list(variation_map.keys())},
+        )
+        if inv_resp.status_code != 200:
+            raise HTTPException(502, f"Square inventory error: {inv_resp.status_code}")
+
+        counts = {
+            c["catalog_object_id"]: int(float(c.get("quantity", 0)))
+            for c in inv_resp.json().get("counts", [])
+            if c.get("state") == "IN_STOCK"
+        }
+
+        # 3. Merge and return
+        result = []
+        for var_id, meta in variation_map.items():
+            qty = counts.get(var_id, 0)
+            label = meta["name"]
+            if meta["var_name"] and meta["var_name"].lower() != "regular":
+                label = f"{meta['name']} ({meta['var_name']})"
+            result.append({
+                "name":   label,
+                "sku":    meta["sku"],
+                "price":  meta["price"],
+                "qty":    qty,
+                "hidden": meta["hidden"],
+            })
+
+        result.sort(key=lambda x: (x["hidden"], x["name"]))
+        return {"items": result}
+
+
 @app.get("/api/calendar/events")
 async def calendar_events(token: str = Query(...)):
     """Fetch upcoming events from the team calendar via service account."""
