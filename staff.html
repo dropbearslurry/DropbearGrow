@@ -369,6 +369,7 @@ body::after {
     <div class="topbar-tabs">
       <button class="tab-btn active" data-panel="chat">⬡ COMMS</button>
       <button class="tab-btn" data-panel="repo">⬡ FILES</button>
+      <button class="tab-btn" data-panel="plans">⬡ PLANS</button>
     </div>
     <div class="topbar-right">
       <div id="conn-indicator" class="conn-status no-server">
@@ -446,6 +447,22 @@ body::after {
         <div class="repo-statusbar">
           <div class="repo-stat">files: <b id="stat-count">—</b></div>
           <div class="repo-stat">total size: <b id="stat-size">—</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plans Panel -->
+    <div class="panel" id="panel-plans">
+      <div class="repo-layout">
+        <div class="repo-toolbar">
+          <div class="repo-title">plans &amp; ideas</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:60px 20px;">
+          <div style="font-size:48px;opacity:0.15;">◈</div>
+          <div style="font-family:var(--mono);font-size:12px;letter-spacing:0.15em;color:var(--text-dim);text-transform:uppercase;">coming soon</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);text-align:center;max-width:360px;line-height:1.8;">
+            This space is reserved for team suggestions, expansion ideas, and work-in-progress plans.
+          </div>
         </div>
       </div>
     </div>
