@@ -126,14 +126,19 @@ if [[ ! -f "$ENV_FILE" ]]; then
     read -r -s -p "  SMTP_PASS: " _smtp_pass
     echo ""
 
-    # Generate a random ADMIN_KEY
+    # Generate a random ADMIN_KEY (urlsafe base64 — no quoting needed)
     _admin_key=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+
+    # Double-quote SMTP_PASS in the file; escape \ and " so any password
+    # character (spaces, #, quotes, etc.) parses correctly in dotenv format
+    _smtp_pass_safe="${_smtp_pass//\\/\\\\}"   # \ → \\
+    _smtp_pass_safe="${_smtp_pass_safe//\"/\\\"}" # " → \"
 
     cat > "$ENV_FILE" <<ENVEOF
 SMTP_HOST=mail.dropbearslurry.com.au
 SMTP_PORT=587
 SMTP_USER=admin@dropbearslurry.com.au
-SMTP_PASS=${_smtp_pass}
+SMTP_PASS="${_smtp_pass_safe}"
 SMTP_FROM=internal@dropbearslurry.com.au
 ADMIN_KEY=${_admin_key}
 ENVEOF
