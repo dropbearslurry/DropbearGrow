@@ -22,7 +22,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from passlib.context import CryptContext
-import uvicorn
 
 try:
     from dotenv import load_dotenv
@@ -509,5 +508,3 @@ def _human_size(n: int) -> str:
     return f"{n:.1f} TB"
 
 
-if __name__ == "__main__":
-    uvicorn.run("server:app", host="0.0.0.0", port=7331, reload=True)
