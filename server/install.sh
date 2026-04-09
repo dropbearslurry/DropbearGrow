@@ -207,7 +207,13 @@ ln -sf "/etc/nginx/sites-available/${SERVICE_NAME}" "/etc/nginx/sites-enabled/${
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl enable nginx
-ok "nginx configured"
+if systemctl is-active --quiet nginx; then
+    systemctl reload nginx
+    ok "nginx configured and reloaded"
+else
+    systemctl start nginx
+    ok "nginx configured and started"
+fi
 
 # ── Firewall ──────────────────────────────────────────────────────────────────
 step "Configuring firewall"
